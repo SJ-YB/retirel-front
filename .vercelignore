@@ -1,0 +1,6 @@
+.claude/
+.git/
+.idea/
+.vscode/
+node_modules/
+*.md
