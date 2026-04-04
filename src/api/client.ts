@@ -3,6 +3,7 @@ import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
 import { ENV } from '../config/env.ts'
 import type { ApiErrorResponse } from '../types/api.ts'
+import { useAuthStore } from '../stores/authStore.ts'
 
 const apiClient = axios.create({
   baseURL: ENV.API_BASE_URL,
@@ -14,11 +15,10 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // TODO [AUTH]: 인증 구현 시 여기에 토큰 주입
-    // const token = getAuthToken()
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`
-    // }
+    const token = useAuthStore.getState().token
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
     return config
   },
   (error: unknown) => Promise.reject(error),
@@ -32,8 +32,8 @@ apiClient.interceptors.response.use(
 
       switch (status) {
         case 401:
-          // TODO [AUTH]: 로그인 페이지로 리다이렉트 또는 토큰 갱신 처리
-          console.error('[API] 401 Unauthorized')
+          useAuthStore.getState().clearAuth()
+          window.location.href = '/auth/login'
           break
         case 403:
           console.error('[API] 403 Forbidden')
