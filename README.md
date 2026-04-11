@@ -33,7 +33,7 @@ cp .env.example .env.local
 | 변수 | 설명 |
 |------|------|
 | `VITE_API_BASE_URL` | 백엔드 API 기본 URL |
-| `VITE_APP_ENV` | 애플리케이션 환경 (`development` / `production`) |
+| `VITE_GOOGLE_CLIENT_ID` | Google OAuth 2.0 Client ID |
 
 ## 스크립트
 
