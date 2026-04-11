@@ -10,7 +10,6 @@ function requireEnv(key: string): string {
 
 export const ENV = {
   API_BASE_URL: requireEnv('VITE_API_BASE_URL'),
-  APP_ENV: requireEnv('VITE_APP_ENV'),
   GOOGLE_CLIENT_ID: requireEnv('VITE_GOOGLE_CLIENT_ID'),
   IS_DEV: import.meta.env.DEV,
   IS_PROD: import.meta.env.PROD,
