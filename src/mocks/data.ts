@@ -1,11 +1,15 @@
 // Mock 데이터 정의
 // 백엔드 준비 시 이 파일만 삭제하면 됩니다.
 
-export const mockAccounts = [
+import type { Account } from '../types/account'
+
+export const mockAccounts: Account[] = [
   {
     id: 'acc-1',
     name: '주거래 계좌',
     bank: '국민은행',
+    owner: '최영범',
+    currency: 'KRW',
     accountNumber: '123-456-789012',
     balance: 15_000_000,
     type: 'CHECKING',
@@ -14,6 +18,8 @@ export const mockAccounts = [
     id: 'acc-2',
     name: '급여 계좌',
     bank: '신한은행',
+    owner: '최영범',
+    currency: 'KRW',
     accountNumber: '987-654-321098',
     balance: 8_500_000,
     type: 'SAVINGS',
@@ -22,6 +28,8 @@ export const mockAccounts = [
     id: 'acc-3',
     name: '투자 계좌',
     bank: '미래에셋증권',
+    owner: '최영범',
+    currency: 'KRW',
     accountNumber: '555-123-456789',
     balance: 32_000_000,
     type: 'INVESTMENT',
