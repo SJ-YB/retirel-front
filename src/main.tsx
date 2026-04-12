@@ -9,12 +9,21 @@ import theme from './styles/theme.ts'
 import './styles/global.css'
 import router from './router/index.tsx'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <GoogleOAuthProvider clientId={ENV.GOOGLE_CLIENT_ID}>
-      <ConfigProvider theme={theme} locale={koKR}>
-        <RouterProvider router={router} />
-      </ConfigProvider>
-    </GoogleOAuthProvider>
-  </StrictMode>,
-)
+async function bootstrap() {
+  if (ENV.IS_DEV) {
+    const { worker } = await import('./mocks/browser')
+    await worker.start({ onUnhandledRequest: 'bypass' })
+  }
+
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <GoogleOAuthProvider clientId={ENV.GOOGLE_CLIENT_ID}>
+        <ConfigProvider theme={theme} locale={koKR}>
+          <RouterProvider router={router} />
+        </ConfigProvider>
+      </GoogleOAuthProvider>
+    </StrictMode>,
+  )
+}
+
+bootstrap()
