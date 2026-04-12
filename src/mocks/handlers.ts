@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
 
+import type { CreateAccountRequest, UpdateAccountRequest } from '../types/account'
 import {
   mockAccounts,
   mockTransactions,
@@ -46,6 +47,42 @@ export const handlers = [
       success: true,
       message: 'OK',
       data: account,
+    })
+  }),
+
+  http.post(`${API_BASE}/accounts`, async ({ request }) => {
+    const body = (await request.json()) as CreateAccountRequest
+    const newAccount = {
+      id: `acc-${Date.now()}`,
+      name: body.name,
+      bank: body.bank,
+      accountNumber: body.accountNumber ?? '',
+      currency: body.currency,
+      ownerName: body.ownerName,
+      balance: 0,
+    }
+    mockAccounts.push(newAccount)
+    return HttpResponse.json({
+      success: true,
+      message: '계좌가 등록되었습니다',
+      data: newAccount,
+    })
+  }),
+
+  http.put(`${API_BASE}/accounts/:id`, async ({ params, request }) => {
+    const body = (await request.json()) as UpdateAccountRequest
+    const index = mockAccounts.findIndex((a) => a.id === params.id)
+    if (index === -1) {
+      return HttpResponse.json(
+        { success: false, message: '계좌를 찾을 수 없습니다' },
+        { status: 404 },
+      )
+    }
+    mockAccounts[index] = { ...mockAccounts[index], name: body.name }
+    return HttpResponse.json({
+      success: true,
+      message: '계좌가 수정되었습니다',
+      data: mockAccounts[index],
     })
   }),
 
