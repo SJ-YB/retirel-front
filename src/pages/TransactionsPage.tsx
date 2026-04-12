@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DatePicker, Select, Space, Table, Tag, Typography } from 'antd'
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import type { Dayjs } from 'dayjs'
@@ -28,11 +28,16 @@ const TRANSACTION_TYPE_COLORS: Record<TransactionType, string> = {
   DIVIDEND: 'purple',
 }
 
+const PAGE_SIZE = 20
+
+const formatKRW = (value: number) =>
+  new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 }).format(value)
+
 function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loading, setLoading] = useState(false)
-  const [pagination, setPagination] = useState({ page: 1, size: 20, total: 0 })
+  const [pagination, setPagination] = useState({ page: 1, total: 0 })
   const [filterAccountId, setFilterAccountId] = useState<string | undefined>()
   const [filterType, setFilterType] = useState<TransactionType | undefined>()
   const [filterDateRange, setFilterDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null)
@@ -41,7 +46,7 @@ function TransactionsPage() {
   const fetchTransactions = useCallback(async (page = 1) => {
     setLoading(true)
     try {
-      const params: Record<string, string | number> = { page, size: pagination.size }
+      const params: Record<string, string | number> = { page, size: PAGE_SIZE }
       if (filterAccountId) params.account_id = filterAccountId
       if (filterType) params.type = filterType
       if (filterDateRange?.[0]) params.from = filterDateRange[0].format('YYYY-MM-DD')
@@ -49,20 +54,20 @@ function TransactionsPage() {
 
       const { data } = await apiClient.get<PaginatedResponse<Transaction>>('/transactions', { params })
       setTransactions(data.data)
-      setPagination({ page: data.meta.page, size: data.meta.size, total: data.meta.totalElements })
+      setPagination({ page: data.meta.page, total: data.meta.totalElements })
     } catch {
       showToast({ message: '거래 내역을 불러오지 못했습니다', type: 'error' })
     } finally {
       setLoading(false)
     }
-  }, [filterAccountId, filterType, filterDateRange, pagination.size, showToast])
+  }, [filterAccountId, filterType, filterDateRange, showToast])
 
   const fetchAccounts = useCallback(async () => {
     try {
       const { data } = await apiClient.get<PaginatedResponse<Account>>('/accounts')
       setAccounts(data.data)
     } catch {
-      // silent - filter will just be empty
+      console.error('[TransactionsPage] 계좌 목록 조회 실패')
     }
   }, [])
 
@@ -78,10 +83,10 @@ function TransactionsPage() {
     fetchTransactions(paginationConfig.current ?? 1)
   }
 
-  const accountName = (accountId: string) => {
-    const account = accounts.find((a) => a.id === accountId)
-    return account?.name ?? accountId
-  }
+  const accountMap = useMemo(
+    () => new Map(accounts.map((a) => [a.id, a.name])),
+    [accounts],
+  )
 
   const columns: ColumnsType<Transaction> = [
     {
@@ -104,7 +109,7 @@ function TransactionsPage() {
       dataIndex: 'accountId',
       key: 'accountId',
       width: 130,
-      render: (accountId: string) => accountName(accountId),
+      render: (accountId: string) => accountMap.get(accountId) ?? accountId,
     },
     {
       title: '종목',
@@ -126,8 +131,7 @@ function TransactionsPage() {
       key: 'amount',
       width: 130,
       align: 'right',
-      render: (amount: number) =>
-        new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 }).format(amount),
+      render: (amount: number) => formatKRW(amount),
     },
     {
       title: '수수료',
@@ -135,7 +139,7 @@ function TransactionsPage() {
       key: 'fee',
       width: 100,
       align: 'right',
-      render: (fee: number) => fee > 0 ? fee.toLocaleString() + '원' : '-',
+      render: (fee: number) => fee > 0 ? formatKRW(fee) : '-',
     },
     {
       title: '세금',
@@ -143,7 +147,7 @@ function TransactionsPage() {
       key: 'tax',
       width: 100,
       align: 'right',
-      render: (tax: number) => tax > 0 ? tax.toLocaleString() + '원' : '-',
+      render: (tax: number) => tax > 0 ? formatKRW(tax) : '-',
     },
     {
       title: '메모',
@@ -191,7 +195,7 @@ function TransactionsPage() {
         onChange={handleTableChange}
         pagination={{
           current: pagination.page,
-          pageSize: pagination.size,
+          pageSize: PAGE_SIZE,
           total: pagination.total,
           showSizeChanger: false,
           showTotal: (total) => `총 ${total}건`,
