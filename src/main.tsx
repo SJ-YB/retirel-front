@@ -10,10 +10,8 @@ import './styles/global.css'
 import router from './router/index.tsx'
 
 async function bootstrap() {
-  if (ENV.IS_DEV) {
-    const { worker } = await import('./mocks/browser')
-    await worker.start({ onUnhandledRequest: 'bypass' })
-  }
+  const { worker } = await import('./mocks/browser')
+  await worker.start({ onUnhandledRequest: 'bypass' })
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
