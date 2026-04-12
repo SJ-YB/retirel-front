@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { DatePicker, Select, Space, Table, Tag, Typography } from 'antd'
+import { Button, DatePicker, Select, Space, Table, Tag, Typography } from 'antd'
+import { PlusOutlined } from '@ant-design/icons'
 import type { ColumnsType, TablePaginationConfig } from 'antd/es/table'
 import type { Dayjs } from 'dayjs'
 
 import { apiClient } from '../api'
 import { useUiStore } from '../stores'
 import type { Account } from '../types/account'
-import type { Transaction, TransactionType } from '../types/transaction'
-import type { PaginatedResponse } from '../types/api'
+import type { CreateTransactionRequest, Transaction, TransactionType } from '../types/transaction'
+import type { ApiResponse, PaginatedResponse } from '../types/api'
+import TransactionFormModal from './transactions/TransactionFormModal'
 
 const { Title } = Typography
 const { RangePicker } = DatePicker
@@ -18,6 +20,9 @@ const TRANSACTION_TYPE_LABELS: Record<TransactionType, string> = {
   DEPOSIT: '입금',
   WITHDRAWAL: '출금',
   DIVIDEND: '배당',
+  INTEREST: '이자',
+  DEBT_REPAYMENT: '부채상환',
+  DEPOSIT_CHANGE: '보증금변동',
 }
 
 const TRANSACTION_TYPE_COLORS: Record<TransactionType, string> = {
@@ -26,6 +31,9 @@ const TRANSACTION_TYPE_COLORS: Record<TransactionType, string> = {
   DEPOSIT: 'green',
   WITHDRAWAL: 'orange',
   DIVIDEND: 'purple',
+  INTEREST: 'cyan',
+  DEBT_REPAYMENT: 'magenta',
+  DEPOSIT_CHANGE: 'geekblue',
 }
 
 const PAGE_SIZE = 20
@@ -41,6 +49,8 @@ function TransactionsPage() {
   const [filterAccountId, setFilterAccountId] = useState<string | undefined>()
   const [filterType, setFilterType] = useState<TransactionType | undefined>()
   const [filterDateRange, setFilterDateRange] = useState<[Dayjs | null, Dayjs | null] | null>(null)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const { showToast } = useUiStore()
 
   const fetchTransactions = useCallback(async (page = 1) => {
@@ -81,6 +91,23 @@ function TransactionsPage() {
 
   const handleTableChange = (paginationConfig: TablePaginationConfig) => {
     fetchTransactions(paginationConfig.current ?? 1)
+  }
+
+  const handleCreateOpen = () => setModalOpen(true)
+  const handleCreateClose = () => setModalOpen(false)
+
+  const handleCreateSubmit = async (values: CreateTransactionRequest) => {
+    setSubmitting(true)
+    try {
+      await apiClient.post<ApiResponse<Transaction>>('/transactions', values)
+      showToast({ message: '거래가 등록되었습니다', type: 'success' })
+      handleCreateClose()
+      fetchTransactions(1)
+    } catch {
+      showToast({ message: '거래 등록에 실패했습니다', type: 'error' })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const accountMap = useMemo(
@@ -160,7 +187,12 @@ function TransactionsPage() {
 
   return (
     <div>
-      <Title level={3} style={{ marginBottom: 24 }}>거래 내역</Title>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <Title level={3} style={{ margin: 0 }}>거래 내역</Title>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleCreateOpen}>
+          거래 등록
+        </Button>
+      </div>
 
       <Space wrap style={{ marginBottom: 16 }}>
         <Select
@@ -201,6 +233,14 @@ function TransactionsPage() {
           showTotal: (total) => `총 ${total}건`,
         }}
         locale={{ emptyText: '거래 내역이 없습니다' }}
+      />
+
+      <TransactionFormModal
+        open={modalOpen}
+        accounts={accounts}
+        onClose={handleCreateClose}
+        onSubmit={handleCreateSubmit}
+        loading={submitting}
       />
     </div>
   )
