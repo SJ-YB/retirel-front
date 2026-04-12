@@ -1,6 +1,7 @@
 import { http, HttpResponse } from 'msw'
 
 import type { CreateAccountRequest, UpdateAccountRequest } from '../types/account'
+import type { CreateTransactionRequest } from '../types/transaction'
 import {
   mockAccounts,
   mockTransactions,
@@ -87,6 +88,32 @@ export const handlers = [
   }),
 
   // ── 거래 내역 ─────────────────────────────────
+  http.post(`${API_BASE}/transactions`, async ({ request }) => {
+    const body = (await request.json()) as CreateTransactionRequest
+    const newTxn = {
+      id: `txn-${Date.now()}`,
+      accountId: body.accountId,
+      date: body.date,
+      type: body.type,
+      ticker: body.ticker ?? '',
+      quantity: body.quantity ?? 0,
+      amount: body.amount ?? 0,
+      fee: body.fee ?? 0,
+      tax: body.tax ?? 0,
+      memo: body.memo ?? '',
+      currency: body.currency,
+      principal: body.principal,
+      interest: body.interest,
+      direction: body.direction,
+    }
+    mockTransactions.unshift(newTxn)
+    return HttpResponse.json({
+      success: true,
+      message: '거래가 등록되었습니다',
+      data: newTxn,
+    })
+  }),
+
   http.get(`${API_BASE}/transactions`, ({ request }) => {
     const url = new URL(request.url)
     const accountId = url.searchParams.get('account_id')
