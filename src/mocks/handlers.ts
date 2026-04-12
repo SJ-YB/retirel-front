@@ -87,17 +87,40 @@ export const handlers = [
   }),
 
   // ── 거래 내역 ─────────────────────────────────
-  http.get(`${API_BASE}/transactions`, () => {
+  http.get(`${API_BASE}/transactions`, ({ request }) => {
+    const url = new URL(request.url)
+    const accountId = url.searchParams.get('account_id')
+    const type = url.searchParams.get('type')
+    const from = url.searchParams.get('from')
+    const to = url.searchParams.get('to')
+    const page = Number(url.searchParams.get('page') ?? '1')
+    const size = Number(url.searchParams.get('size') ?? '20')
+
+    let filtered = [...mockTransactions]
+
+    if (accountId) {
+      filtered = filtered.filter((t) => t.accountId === accountId)
+    }
+    if (type) {
+      filtered = filtered.filter((t) => t.type === type)
+    }
+    if (from) {
+      filtered = filtered.filter((t) => t.date >= from)
+    }
+    if (to) {
+      filtered = filtered.filter((t) => t.date <= to)
+    }
+
+    const totalElements = filtered.length
+    const totalPages = Math.ceil(totalElements / size)
+    const start = (page - 1) * size
+    const paged = filtered.slice(start, start + size)
+
     return HttpResponse.json({
       success: true,
       message: 'OK',
-      data: mockTransactions,
-      meta: {
-        page: 1,
-        size: 20,
-        totalElements: mockTransactions.length,
-        totalPages: 1,
-      },
+      data: paged,
+      meta: { page, size, totalElements, totalPages },
     })
   }),
 
