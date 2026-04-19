@@ -1,3 +1,58 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&family=Pretendard+Variable:wght@400..700&display=swap');
+
+/* ─────────────────────────────────────────────────────────────
+   Retirel — Dark Editorial Navy design tokens + base
+   ───────────────────────────────────────────────────────────── */
+:root {
+  --bg: #0B1220;
+  --bg-2: #0D1526;
+  --card: #111A2E;
+  --card-2: #0F1728;
+  --card-hi: #17223B;
+  --surface: #111A2E;
+  --surface-hi: #162139;
+
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hi: rgba(255, 255, 255, 0.10);
+
+  --text: #E7ECF5;
+  --text-1: #E7ECF5;
+  --text-2: #A7B0C2;
+  --text-3: #6B7794;
+  --text-muted: #4E5870;
+
+  --accent: #F5C26B;
+  --accent-hi: #FFD489;
+  --accent-dim: rgba(245, 194, 107, 0.12);
+  --accent-line: rgba(245, 194, 107, 0.35);
+
+  --emerald: #6EE7A8;
+  --sky: #7CB8F5;
+  --rose: #F38BA8;
+  --violet: #B89BF0;
+
+  --pos: #6EE7A8;
+  --neg: #F38BA8;
+
+  --good: #6EE7A8;
+  --bad: #F38BA8;
+
+  --korean: #F5C26B;
+  --us: #6EE7A8;
+  --debt: #F38BA8;
+  --deposit-color: #B89BF0;
+
+  --radius: 14px;
+  --radius-sm: 10px;
+
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 40px -20px rgba(0, 0, 0, 0.6);
+  --shadow-drawer: -20px 0 60px rgba(0, 0, 0, 0.5);
+
+  --serif: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
+  --sans: 'Inter', 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
 /* CSS Reset */
 *,
 *::before,
@@ -14,54 +69,40 @@ html {
   text-rendering: optimizeLegibility;
 }
 
+html,
 body {
   margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.45;
+  overflow-x: hidden;
+}
+
+body {
   min-height: 100vh;
-  background-color: #f5f5f5;
 }
 
-/* CSS Variables complementing Ant Design tokens */
-:root {
-  /* Layout */
-  --layout-header-height: 64px;
-  --layout-sider-width: 240px;
-  --layout-sider-collapsed-width: 80px;
-
-  /* Spacing scale */
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
-  --spacing-xxl: 48px;
-
-  /* Z-index layers */
-  --z-dropdown: 1050;
-  --z-modal: 1000;
-  --z-overlay: 900;
-  --z-header: 100;
-
-  /* Content constraints */
-  --content-max-width: 1200px;
+#root {
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
-/* Scrollbar styling for admin panels */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #d9d9d9;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #bfbfbf;
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: inherit;
 }
 
 a {
@@ -69,6 +110,360 @@ a {
   color: inherit;
 }
 
-#root {
-  min-height: 100vh;
+::selection {
+  background: var(--accent-dim);
+  color: var(--accent-hi);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Hero radial background */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(600px 240px at 85% -10%, rgba(245, 194, 107, 0.1), transparent 60%),
+    radial-gradient(500px 260px at 10% 120%, rgba(124, 184, 245, 0.06), transparent 60%);
+  pointer-events: none;
+}
+
+/* Typography helpers */
+.wordmark {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+}
+
+.label-caps {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+}
+
+.mono {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.serif {
+  font-family: var(--serif);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.pos {
+  color: var(--pos);
+}
+
+.neg {
+  color: var(--neg);
+}
+
+.muted {
+  color: var(--text-3);
+}
+
+.dim {
+  color: var(--text-2);
+}
+
+/* Card */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-card);
+}
+
+/* Stripe */
+.stripe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  border: 1px solid var(--border-hi);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text);
+  transition: all 0.15s ease;
+}
+.btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.btn.primary {
+  background: var(--accent);
+  color: #1a1405;
+  border-color: transparent;
+  font-weight: 500;
+}
+.btn.primary:hover {
+  background: var(--accent-hi);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Chip */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--text-2);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.chip:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+}
+.chip.active {
+  background: var(--accent-dim);
+  border-color: var(--accent-line);
+  color: var(--accent-hi);
+}
+.chip .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.85;
+}
+
+/* Segmented */
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  gap: 2px;
+}
+.seg button {
+  padding: 5px 12px;
+  font-size: 11px;
+  border-radius: 999px;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+  font-family: var(--mono);
+  transition: all 0.15s ease;
+}
+.seg button:hover {
+  color: var(--text);
+}
+.seg button.active {
+  background: var(--accent);
+  color: #1a1405;
+}
+
+/* Form field */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field label {
+  font-size: 11px;
+  color: var(--text-3);
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.input,
+.select,
+.textarea {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--text);
+  transition: border-color 0.15s, background 0.15s;
+  width: 100%;
+  outline: none;
+}
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border-color: var(--accent-line);
+  background: rgba(245, 194, 107, 0.03);
+}
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7794' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+}
+.select option {
+  background: var(--card);
+  color: var(--text);
+}
+
+/* Divider */
+.hr {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+  border: none;
+}
+
+/* Grid */
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+/* Nav link (sidebar) */
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--text-2);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+  user-select: none;
+}
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+}
+.nav-link.active {
+  background: var(--card);
+  border-color: var(--border);
+  color: var(--text);
+}
+.nav-link.active .nav-ico {
+  color: var(--accent);
+}
+.nav-ico {
+  color: var(--text-3);
+  display: inline-flex;
+}
+
+/* Table */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tbl th {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  font-weight: 400;
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.tbl td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.tbl tr:last-child td {
+  border-bottom: none;
+}
+.tbl tr:hover td {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+/* Pill */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-2);
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+}
+
+/* Scrollbar hiding for chip row */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+/* Drawer slide animation */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+.slide-in-right {
+  animation: slide-in-right 0.22s ease-out;
+}
+
+/* Tx row hover */
+.tx-row:hover {
+  background: var(--surface-hi);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Ant Design overrides — keep dark theme consistent for antd
+   ───────────────────────────────────────────────────────────── */
+.ant-modal-content,
+.ant-modal-header {
+  background: var(--card) !important;
+}
+.ant-modal-title,
+.ant-modal-close-icon svg {
+  color: var(--text) !important;
 }
