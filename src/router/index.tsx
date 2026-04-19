@@ -1,12 +1,16 @@
+/* eslint-disable react-refresh/only-export-components */
+import { lazy, Suspense } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import RootLayout from '../layouts/RootLayout.tsx'
 import ProtectedRoute from '../components/ProtectedRoute.tsx'
 import AuthGuard from '../components/AuthGuard.tsx'
-import DashboardPage from '../pages/DashboardPage.tsx'
-import AccountsPage from '../pages/AccountsPage.tsx'
-import TransactionsPage from '../pages/TransactionsPage.tsx'
-import AssetsPage from '../pages/AssetsPage.tsx'
-import LoginPage from '../pages/LoginPage.tsx'
+import PageFallback from '../components/ui/PageFallback.tsx'
+
+const DashboardPage = lazy(() => import('../pages/DashboardPage.tsx'))
+const AccountsPage = lazy(() => import('../pages/AccountsPage.tsx'))
+const TransactionsPage = lazy(() => import('../pages/TransactionsPage.tsx'))
+const AssetsPage = lazy(() => import('../pages/AssetsPage.tsx'))
+const LoginPage = lazy(() => import('../pages/LoginPage.tsx'))
 
 const router = createBrowserRouter([
   {
@@ -16,10 +20,38 @@ const router = createBrowserRouter([
       {
         element: <RootLayout />,
         children: [
-          { index: true, element: <DashboardPage /> },
-          { path: 'accounts', element: <AccountsPage /> },
-          { path: 'transactions', element: <TransactionsPage /> },
-          { path: 'assets', element: <AssetsPage /> },
+          {
+            index: true,
+            element: (
+              <Suspense fallback={<PageFallback />}>
+                <DashboardPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'accounts',
+            element: (
+              <Suspense fallback={<PageFallback />}>
+                <AccountsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'transactions',
+            element: (
+              <Suspense fallback={<PageFallback />}>
+                <TransactionsPage />
+              </Suspense>
+            ),
+          },
+          {
+            path: 'assets',
+            element: (
+              <Suspense fallback={<PageFallback />}>
+                <AssetsPage />
+              </Suspense>
+            ),
+          },
         ],
       },
     ],
@@ -28,7 +60,14 @@ const router = createBrowserRouter([
     path: '/auth',
     element: <AuthGuard />,
     children: [
-      { path: 'login', element: <LoginPage /> },
+      {
+        path: 'login',
+        element: (
+          <Suspense fallback={<PageFallback />}>
+            <LoginPage />
+          </Suspense>
+        ),
+      },
     ],
   },
 ])

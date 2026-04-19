@@ -1,60 +1,62 @@
 import type { ThemeConfig } from 'antd'
+import { theme as antdTheme } from 'antd'
 
 const theme: ThemeConfig = {
+  algorithm: antdTheme.darkAlgorithm,
   token: {
-    // Color palette - professional financial/admin style
-    colorPrimary: '#1677ff',
-    colorSuccess: '#52c41a',
-    colorWarning: '#faad14',
-    colorError: '#ff4d4f',
-    colorInfo: '#1677ff',
+    colorPrimary: '#F5C26B',
+    colorSuccess: '#6EE7A8',
+    colorWarning: '#F5C26B',
+    colorError: '#F38BA8',
+    colorInfo: '#7CB8F5',
 
-    // Neutral tones
-    colorBgContainer: '#ffffff',
-    colorBgLayout: '#f5f5f5',
-    colorBorder: '#d9d9d9',
-    colorText: '#262626',
-    colorTextSecondary: '#8c8c8c',
+    colorBgBase: '#0B1220',
+    colorBgContainer: '#111A2E',
+    colorBgElevated: '#17223B',
+    colorBgLayout: '#0B1220',
+    colorBorder: 'rgba(255, 255, 255, 0.06)',
+    colorBorderSecondary: 'rgba(255, 255, 255, 0.10)',
+    colorText: '#E7ECF5',
+    colorTextSecondary: '#A7B0C2',
+    colorTextTertiary: '#6B7794',
 
-    // Typography
     fontFamily:
-      "'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif",
+      "'Inter', 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif",
     fontSize: 14,
 
-    // Spacing & sizing
-    borderRadius: 6,
+    borderRadius: 10,
     controlHeight: 36,
 
-    // Shadows
     boxShadow:
-      '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)',
+      '0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 40px -20px rgba(0, 0, 0, 0.6)',
   },
   components: {
     Button: {
       controlHeight: 36,
-      borderRadius: 6,
-    },
-    Table: {
-      headerBg: '#fafafa',
-      headerColor: '#262626',
-      rowHoverBg: '#f5f5f5',
-      cellPaddingBlock: 12,
-      cellPaddingInline: 16,
+      borderRadius: 10,
+      primaryColor: '#1a1405',
     },
     Modal: {
       titleFontSize: 18,
+      headerBg: '#111A2E',
+      contentBg: '#111A2E',
     },
     Input: {
       controlHeight: 36,
-      borderRadius: 6,
+      borderRadius: 8,
     },
     Select: {
       controlHeight: 36,
-      borderRadius: 6,
+      borderRadius: 8,
+    },
+    DatePicker: {
+      controlHeight: 36,
+      borderRadius: 8,
     },
     Form: {
-      labelFontSize: 14,
+      labelFontSize: 12,
       verticalLabelPadding: '0 0 4px',
+      labelColor: '#A7B0C2',
     },
   },
 }
