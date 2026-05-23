@@ -26,10 +26,20 @@ export interface CreateAccountRequest {
   name: string
   bank: string
   accountNumber?: string
-  currency: Currency
+  currency?: Currency
   ownerName: string
   type?: AccountType
   owner?: AccountOwner
+}
+
+// 백엔드(POST /api/v1/accounts)가 기대하는 계좌 생성 요청 본문.
+export type Bank = 'hantu'
+
+export interface CreateAccountApiRequest {
+  number: string
+  owner_id: string
+  bank: Bank
+  nickname?: string
 }
 
 export interface UpdateAccountRequest {
