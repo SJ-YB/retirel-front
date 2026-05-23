@@ -343,10 +343,10 @@ function AssetsPage() {
           apiClient.get<PaginatedResponse<Deposit>>('/assets/deposits'),
           apiClient.get<ApiResponse<AssetsSummary>>('/assets/summary'),
         ])
-        setHoldings(h.data.data)
-        setDebts(d.data.data)
-        setDeposits(dp.data.data)
-        setSummary(s.data.data)
+        if (Array.isArray(h.data?.data)) setHoldings(h.data.data)
+        if (Array.isArray(d.data?.data)) setDebts(d.data.data)
+        if (Array.isArray(dp.data?.data)) setDeposits(dp.data.data)
+        if (s.data?.data) setSummary(s.data.data)
       } catch {
         // fall back to mocks already set
       }

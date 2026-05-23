@@ -80,10 +80,10 @@ function DashboardPage() {
           apiClient.get<ApiResponse<AllocationSlice[]>>('/dashboard/allocation'),
           apiClient.get<ApiResponse<IncomeHistoryPoint[]>>('/dashboard/income-history'),
         ])
-        setSummary(s.data.data)
-        setTrend(t.data.data)
-        setAllocation(a.data.data)
-        setIncome(i.data.data)
+        if (s.data?.data) setSummary(s.data.data)
+        if (Array.isArray(t.data?.data)) setTrend(t.data.data)
+        if (Array.isArray(a.data?.data)) setAllocation(a.data.data)
+        if (Array.isArray(i.data?.data)) setIncome(i.data.data)
       } catch {
         // fall back to mock defaults
       }
