@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { Form, Input, Modal, Select } from 'antd'
+import { Button, Form, Input, Modal, Popconfirm, Select } from 'antd'
 
 import type { Account, CreateAccountRequest } from '../../types/account'
 
@@ -8,7 +8,9 @@ interface AccountFormModalProps {
   account: Account | null
   onClose: () => void
   onSubmit: (values: CreateAccountRequest) => Promise<void>
+  onDelete?: () => Promise<void>
   loading: boolean
+  deleting?: boolean
 }
 
 function AccountFormModal({
@@ -16,7 +18,9 @@ function AccountFormModal({
   account,
   onClose,
   onSubmit,
+  onDelete,
   loading,
+  deleting = false,
 }: AccountFormModalProps) {
   const [form] = Form.useForm<CreateAccountRequest>()
   const isEdit = !!account
@@ -53,6 +57,33 @@ function AccountFormModal({
       cancelText="취소"
       confirmLoading={loading}
       destroyOnClose
+      footer={
+        isEdit
+          ? [
+              onDelete ? (
+                <Popconfirm
+                  key="delete"
+                  title="계좌 삭제"
+                  description="이 계좌를 삭제하시겠습니까?"
+                  okText="삭제"
+                  cancelText="취소"
+                  okButtonProps={{ danger: true }}
+                  onConfirm={onDelete}
+                >
+                  <Button danger loading={deleting} style={{ float: 'left' }}>
+                    삭제
+                  </Button>
+                </Popconfirm>
+              ) : null,
+              <Button key="cancel" onClick={onClose}>
+                취소
+              </Button>,
+              <Button key="ok" type="primary" loading={loading} onClick={handleOk}>
+                수정
+              </Button>,
+            ]
+          : undefined
+      }
     >
       <Form
         form={form}
