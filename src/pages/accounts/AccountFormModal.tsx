@@ -27,7 +27,6 @@ function AccountFormModal({
         name: account.name,
         bank: account.bank,
         accountNumber: account.accountNumber,
-        currency: account.currency,
         ownerName: account.ownerName,
       })
     } else if (open) {
@@ -58,7 +57,7 @@ function AccountFormModal({
       <Form
         form={form}
         layout="vertical"
-        initialValues={{ currency: 'KRW' }}
+        initialValues={{ bank: 'hantu' }}
       >
         <Form.Item
           name="name"
@@ -70,31 +69,26 @@ function AccountFormModal({
 
         <Form.Item
           name="bank"
-          label="금융기관명"
-          rules={[{ required: true, message: '금융기관명을 입력해주세요' }]}
-        >
-          <Input placeholder="예: 국민은행" disabled={isEdit} />
-        </Form.Item>
-
-        <Form.Item name="accountNumber" label="계좌번호">
-          <Input placeholder="예: 123-456-789012" disabled={isEdit} />
-        </Form.Item>
-
-        <Form.Item
-          name="currency"
-          label="기본 통화"
-          rules={[{ required: true, message: '통화를 선택해주세요' }]}
+          label="금융사"
+          rules={[{ required: true, message: '금융사를 선택해주세요' }]}
         >
           <Select disabled={isEdit}>
-            <Select.Option value="KRW">KRW (원)</Select.Option>
-            <Select.Option value="USD">USD (달러)</Select.Option>
+            <Select.Option value="hantu">한국투자증권</Select.Option>
           </Select>
         </Form.Item>
 
         <Form.Item
+          name="accountNumber"
+          label="계좌번호"
+          rules={[{ required: true, message: '계좌번호를 입력해주세요' }]}
+        >
+          <Input placeholder="예: 123-456-789012" disabled={isEdit} />
+        </Form.Item>
+
+        <Form.Item
           name="ownerName"
-          label="소유자명"
-          rules={[{ required: true, message: '소유자명을 입력해주세요' }]}
+          label="소유자"
+          rules={[{ required: true, message: '소유자를 입력해주세요' }]}
         >
           <Input placeholder="예: 홍길동" disabled={isEdit} />
         </Form.Item>

@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import axios from 'axios'
 
 import { apiClient } from '../api'
 import { useUiStore } from '../stores'
-import type { Account, CreateAccountRequest } from '../types/account'
+import type {
+  Account,
+  CreateAccountApiRequest,
+  CreateAccountRequest,
+} from '../types/account'
 import type { ApiResponse, PaginatedResponse } from '../types/api'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { fmt, toKrw } from '../utils/format'
@@ -209,13 +214,24 @@ function AccountsPage() {
         })
         showToast({ message: '계좌가 수정되었습니다', type: 'success' })
       } else {
-        await apiClient.post<ApiResponse<Account>>('/accounts', values)
+        const payload: CreateAccountApiRequest = {
+          number: values.accountNumber ?? '',
+          owner_id: values.ownerName,
+          bank: 'hantu',
+          nickname: values.name,
+        }
+        await apiClient.post('/v1/accounts', payload)
         showToast({ message: '계좌가 등록되었습니다', type: 'success' })
       }
       handleClose()
       await fetchAccounts()
-    } catch {
-      showToast({ message: '요청 처리에 실패했습니다', type: 'error' })
+    } catch (err) {
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined
+      showToast({
+        message:
+          status === 409 ? '이미 등록된 계좌입니다' : '요청 처리에 실패했습니다',
+        type: 'error',
+      })
     } finally {
       setSubmitting(false)
     }

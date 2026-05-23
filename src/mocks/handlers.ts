@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 
-import type { CreateAccountRequest, UpdateAccountRequest, Account } from '../types/account'
+import type { UpdateAccountRequest } from '../types/account'
 import type { CreateTransactionRequest, Transaction } from '../types/transaction'
 import {
   mockAccounts,
@@ -53,32 +53,8 @@ export const handlers = [
     return HttpResponse.json({ success: true, message: 'OK', data: account })
   }),
 
-  http.post(`${API_BASE}/accounts`, async ({ request }) => {
-    const body = (await request.json()) as CreateAccountRequest
-    const newAccount: Account = {
-      id: `a-${Date.now()}`,
-      name: body.name,
-      bank: body.bank,
-      accountNumber: body.accountNumber ?? '',
-      currency: body.currency,
-      ownerName: body.ownerName,
-      balance: 0,
-      type: body.type ?? '위탁',
-      owner: body.owner ?? '공동',
-      positions: 0,
-      ytd: 0,
-      stocksPct: 0,
-      cashPct: 100,
-      txCount: 0,
-      stripe: 'var(--accent)',
-    }
-    mockAccounts.push(newAccount)
-    return HttpResponse.json({
-      success: true,
-      message: '계좌가 등록되었습니다',
-      data: newAccount,
-    })
-  }),
+  // 계좌 생성(POST)은 실제 백엔드(POST /api/v1/accounts)로 직접 보낸다.
+  // MSW 핸들러를 두지 않으므로 onUnhandledRequest='bypass'로 네트워크에 통과된다.
 
   http.put(`${API_BASE}/accounts/:id`, async ({ params, request }) => {
     const body = (await request.json()) as UpdateAccountRequest
