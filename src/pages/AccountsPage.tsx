@@ -5,15 +5,44 @@ import { apiClient } from '../api'
 import { useUiStore } from '../stores'
 import type {
   Account,
+  AccountApiResponse,
+  AccountOwner,
+  Bank,
   CreateAccountApiRequest,
   CreateAccountRequest,
 } from '../types/account'
-import type { ApiResponse, PaginatedResponse } from '../types/api'
+import type { ApiResponse } from '../types/api'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { fmt, toKrw } from '../utils/format'
 import PageHeader from '../components/ui/PageHeader'
 import Icon from '../components/ui/Icon'
 import AccountFormModal from './accounts/AccountFormModal'
+
+const BANK_LABELS: Record<Bank, string> = {
+  hantu: '한국투자증권',
+}
+
+// 백엔드는 {bank, number, owner, nickname}만 보관하므로, 화면용 Account의
+// 잔액/통화 등 나머지 필드는 기본값으로 채운다(추후 백엔드 확장 시 정리).
+function fromApiAccount(api: AccountApiResponse): Account {
+  return {
+    id: `${api.bank}-${api.number}`,
+    name: api.nickname ?? api.number,
+    bank: BANK_LABELS[api.bank] ?? api.bank,
+    accountNumber: api.number,
+    currency: 'KRW',
+    ownerName: api.owner,
+    balance: 0,
+    type: '위탁',
+    owner: api.owner as AccountOwner,
+    positions: 0,
+    ytd: 0,
+    stocksPct: 0,
+    cashPct: 100,
+    txCount: 0,
+    stripe: 'var(--accent)',
+  }
+}
 
 function SumItem({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
@@ -166,8 +195,8 @@ function AccountsPage() {
   const fetchAccounts = useCallback(async () => {
     setLoading(true)
     try {
-      const { data } = await apiClient.get<PaginatedResponse<Account>>('/accounts')
-      setAccounts(data.data)
+      const { data } = await apiClient.get<AccountApiResponse[]>('/v1/accounts')
+      setAccounts(Array.isArray(data) ? data.map(fromApiAccount) : [])
     } catch {
       showToast({ message: '계좌 목록을 불러오지 못했습니다', type: 'error' })
     } finally {

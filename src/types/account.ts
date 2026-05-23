@@ -42,6 +42,14 @@ export interface CreateAccountApiRequest {
   nickname?: string
 }
 
+// 백엔드(GET /api/v1/accounts)가 반환하는 계좌 응답 본문.
+export interface AccountApiResponse {
+  number: string
+  owner: string
+  bank: Bank
+  nickname: string | null
+}
+
 export interface UpdateAccountRequest {
   name?: string
   type?: AccountType
