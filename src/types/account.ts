@@ -42,6 +42,11 @@ export interface CreateAccountApiRequest {
   nickname?: string
 }
 
+// 백엔드(PATCH /api/v1/accounts/{bank}/{number})가 기대하는 계좌 수정 요청 본문.
+export interface UpdateAccountApiRequest {
+  nickname: string | null
+}
+
 // 백엔드(GET /api/v1/accounts)가 반환하는 계좌 응답 본문.
 export interface AccountApiResponse {
   number: string

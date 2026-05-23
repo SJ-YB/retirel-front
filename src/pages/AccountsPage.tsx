@@ -10,8 +10,8 @@ import type {
   Bank,
   CreateAccountApiRequest,
   CreateAccountRequest,
+  UpdateAccountApiRequest,
 } from '../types/account'
-import type { ApiResponse } from '../types/api'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { fmt, toKrw } from '../utils/format'
 import PageHeader from '../components/ui/PageHeader'
@@ -42,6 +42,14 @@ function fromApiAccount(api: AccountApiResponse): Account {
     txCount: 0,
     stripe: 'var(--accent)',
   }
+}
+
+// id는 `${bank}-${number}` 형식이고 number에 하이픈이 포함될 수 있으므로,
+// 끝에서 accountNumber 길이만큼 잘라 bank 코드를 복원한다.
+function apiIdentity(account: Account): { bank: string; number: string } {
+  const number = account.accountNumber
+  const bank = account.id.slice(0, account.id.length - number.length - 1)
+  return { bank, number }
 }
 
 function SumItem({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
@@ -190,6 +198,7 @@ function AccountsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingAccount, setEditingAccount] = useState<Account | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const { showToast } = useUiStore()
 
   const fetchAccounts = useCallback(async () => {
@@ -238,9 +247,12 @@ function AccountsPage() {
     setSubmitting(true)
     try {
       if (editingAccount) {
-        await apiClient.put<ApiResponse<Account>>(`/accounts/${editingAccount.id}`, {
-          name: values.name,
-        })
+        const { bank, number } = apiIdentity(editingAccount)
+        const payload: UpdateAccountApiRequest = { nickname: values.name }
+        await apiClient.patch(
+          `/v1/accounts/${encodeURIComponent(bank)}/${encodeURIComponent(number)}`,
+          payload,
+        )
         showToast({ message: '계좌가 수정되었습니다', type: 'success' })
       } else {
         const payload: CreateAccountApiRequest = {
@@ -263,6 +275,24 @@ function AccountsPage() {
       })
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!editingAccount) return
+    setDeleting(true)
+    try {
+      const { bank, number } = apiIdentity(editingAccount)
+      await apiClient.delete(
+        `/v1/accounts/${encodeURIComponent(bank)}/${encodeURIComponent(number)}`,
+      )
+      showToast({ message: '계좌가 삭제되었습니다', type: 'success' })
+      handleClose()
+      await fetchAccounts()
+    } catch {
+      showToast({ message: '계좌 삭제에 실패했습니다', type: 'error' })
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -363,7 +393,9 @@ function AccountsPage() {
         account={editingAccount}
         onClose={handleClose}
         onSubmit={handleSubmit}
+        onDelete={handleDelete}
         loading={submitting}
+        deleting={deleting}
       />
     </>
   )
