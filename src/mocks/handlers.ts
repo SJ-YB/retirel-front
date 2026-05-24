@@ -78,7 +78,6 @@ export const handlers = [
   }),
 
   // ── 거래 내역 ─────────────────────────────────
-  // 거래내역은 증권사 API 연동으로만 입수한다(수동 등록 없음).
   http.get(`${API_BASE}/transactions`, ({ request }) => {
     const url = new URL(request.url)
     const accountId = url.searchParams.get('account_id')
