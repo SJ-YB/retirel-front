@@ -1,7 +1,6 @@
 import { http, HttpResponse } from 'msw'
 
 import type { UpdateAccountRequest } from '../types/account'
-import type { CreateTransactionRequest, Transaction } from '../types/transaction'
 import {
   mockAccounts,
   mockTransactions,
@@ -79,56 +78,6 @@ export const handlers = [
   }),
 
   // ── 거래 내역 ─────────────────────────────────
-  http.post(`${API_BASE}/transactions`, async ({ request }) => {
-    const body = (await request.json()) as CreateTransactionRequest
-    const kindMap: Record<string, Transaction['kind']> = {
-      BUY: '매수',
-      SELL: '매도',
-      DEPOSIT: '외부입금',
-      WITHDRAWAL: '출금',
-      DIVIDEND: '배당금',
-      INTEREST: '이자',
-      DEBT_REPAYMENT: '부채',
-      DEPOSIT_CHANGE: '보증금',
-      SHORT: '숏',
-    }
-    const signMap: Record<string, Transaction['sign']> = {
-      BUY: '-',
-      SELL: '+',
-      DEPOSIT: '+',
-      WITHDRAWAL: '-',
-      DIVIDEND: '+',
-      INTEREST: '+',
-      DEBT_REPAYMENT: '-',
-      DEPOSIT_CHANGE: '-',
-      SHORT: '-',
-    }
-    const newTxn: Transaction = {
-      id: `t-${Date.now()}`,
-      accountId: body.accountId,
-      date: body.date,
-      type: body.type,
-      ticker: body.ticker ?? '',
-      quantity: body.quantity ?? 0,
-      amount: body.amount ?? 0,
-      fee: body.fee ?? 0,
-      tax: body.tax ?? 0,
-      memo: body.memo ?? '',
-      currency: body.currency,
-      principal: body.principal,
-      interest: body.interest,
-      direction: body.direction,
-      kind: kindMap[body.type],
-      sign: signMap[body.type],
-    }
-    mockTransactions.unshift(newTxn)
-    return HttpResponse.json({
-      success: true,
-      message: '거래가 등록되었습니다',
-      data: newTxn,
-    })
-  }),
-
   http.get(`${API_BASE}/transactions`, ({ request }) => {
     const url = new URL(request.url)
     const accountId = url.searchParams.get('account_id')
