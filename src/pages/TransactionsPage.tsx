@@ -4,18 +4,16 @@ import { apiClient } from '../api'
 import { useUiStore } from '../stores'
 import type { Account } from '../types/account'
 import type {
-  CreateTransactionRequest,
   Transaction,
   TransactionKind,
   TransactionType,
 } from '../types/transaction'
-import type { ApiResponse, PaginatedResponse } from '../types/api'
+import type { PaginatedResponse } from '../types/api'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { fmt, toKrw } from '../utils/format'
 import PageHeader from '../components/ui/PageHeader'
 import Icon from '../components/ui/Icon'
 import type { IconName } from '../components/ui/Icon'
-import NewTxDrawer from './transactions/NewTxDrawer'
 
 const FILTERS: { k: 'all' | TransactionKind; label: string; color: string }[] = [
   { k: 'all', label: '전체', color: 'var(--text-3)' },
@@ -200,8 +198,6 @@ function TransactionsPage() {
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState<'all' | TransactionKind>('all')
   const [search, setSearch] = useState('')
-  const [drawerOpen, setDrawerOpen] = useState(!isMobile)
-  const [submitting, setSubmitting] = useState(false)
   const { showToast } = useUiStore()
 
   const fetchTransactions = useCallback(async () => {
@@ -263,67 +259,17 @@ function TransactionsPage() {
     return Array.from(map.entries()).sort((a, b) => (a[0] > b[0] ? -1 : 1))
   }, [filtered])
 
-  const handleCreate = async (payload: CreateTransactionRequest) => {
-    setSubmitting(true)
-    try {
-      await apiClient.post<ApiResponse<Transaction>>('/transactions', payload)
-      showToast({ message: '거래가 등록되었습니다', type: 'success' })
-      if (isMobile) setDrawerOpen(false)
-      fetchTransactions()
-    } catch {
-      showToast({ message: '거래 등록에 실패했습니다', type: 'error' })
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   return (
     <>
       <PageHeader
         title="Transactions"
         meta={`${filtered.length} of ${transactions.length} · YTD ${transactions.length + 460} tx`}
-        right={
-          !isMobile ? (
-            <>
-              <button className="btn" type="button">
-                <Icon name="csv" size={14} /> CSV 업로드
-              </button>
-              <button
-                className="btn primary"
-                type="button"
-                onClick={() => setDrawerOpen(true)}
-              >
-                <Icon name="plus" size={14} /> New Transaction
-              </button>
-            </>
-          ) : undefined
-        }
       />
-
-      {isMobile && (
-        <div style={{ display: 'flex', gap: 8, padding: '0 18px 12px' }}>
-          <button
-            className="btn"
-            style={{ flex: 1, justifyContent: 'center', fontSize: 12 }}
-            type="button"
-          >
-            <Icon name="csv" size={12} /> CSV
-          </button>
-          <button
-            className="btn primary"
-            style={{ flex: 1, justifyContent: 'center', fontSize: 12 }}
-            type="button"
-            onClick={() => setDrawerOpen(true)}
-          >
-            <Icon name="plus" size={12} /> New
-          </button>
-        </div>
-      )}
 
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: !isMobile && drawerOpen ? 'minmax(0, 1fr) 380px' : 'minmax(0, 1fr)',
+          gridTemplateColumns: 'minmax(0, 1fr)',
           gap: 16,
           padding: isMobile ? '0 18px 100px' : '0 28px 32px',
         }}
@@ -435,47 +381,7 @@ function TransactionsPage() {
             )}
           </div>
         </div>
-
-        {/* Desktop drawer */}
-        {!isMobile && drawerOpen && (
-          <div style={{ position: 'sticky', top: 16, alignSelf: 'flex-start' }}>
-            <NewTxDrawer
-              accounts={accounts}
-              onClose={() => setDrawerOpen(false)}
-              onSubmit={handleCreate}
-              loading={submitting}
-            />
-          </div>
-        )}
       </div>
-
-      {/* Mobile bottom sheet */}
-      {isMobile && drawerOpen && (
-        <div
-          onClick={() => setDrawerOpen(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1000,
-            background: 'rgba(4,8,16,0.72)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'flex-end',
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{ width: '100%', maxHeight: '92vh', overflow: 'auto' }}
-          >
-            <NewTxDrawer
-              accounts={accounts}
-              onClose={() => setDrawerOpen(false)}
-              onSubmit={handleCreate}
-              loading={submitting}
-            />
-          </div>
-        </div>
-      )}
     </>
   )
 }

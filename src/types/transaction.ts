@@ -40,19 +40,3 @@ export interface Transaction {
   kind?: TransactionKind
   sign?: TransactionSign
 }
-
-export interface CreateTransactionRequest {
-  accountId: string
-  date: string
-  type: TransactionType
-  ticker?: string
-  quantity?: number
-  amount?: number
-  currency?: string
-  fee?: number
-  tax?: number
-  memo?: string
-  principal?: number
-  interest?: number
-  direction?: 'PAY' | 'REFUND'
-}
