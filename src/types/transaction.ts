@@ -40,3 +40,26 @@ export interface Transaction {
   kind?: TransactionKind
   sign?: TransactionSign
 }
+
+export interface MoneyApiResponse {
+  currency: string
+  amount: string
+}
+
+export interface AccountRefApiResponse {
+  bank: string
+  number: string
+}
+
+// 백엔드(GET /api/v1/transactions)가 반환하는 거래내역 응답 본문.
+export interface TransactionApiResponse {
+  id: string
+  account: AccountRefApiResponse
+  type: string
+  traded_at: string
+  amount: MoneyApiResponse
+  ticker: string | null
+  quantity: string | null
+  fee: MoneyApiResponse | null
+  tax: MoneyApiResponse | null
+}
