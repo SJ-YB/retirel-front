@@ -2,18 +2,37 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { apiClient } from '../api'
 import { useUiStore } from '../stores'
-import type { Account } from '../types/account'
+import type { Account, AccountApiResponse } from '../types/account'
 import type {
   Transaction,
+  TransactionApiResponse,
   TransactionKind,
   TransactionType,
 } from '../types/transaction'
-import type { PaginatedResponse } from '../types/api'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { fmt, toKrw } from '../utils/format'
+import { fromApiAccount } from '../utils/account'
 import PageHeader from '../components/ui/PageHeader'
 import Icon from '../components/ui/Icon'
 import type { IconName } from '../components/ui/Icon'
+
+// 백엔드(GET /v1/transactions) 응답을 화면용 Transaction으로 변환한다.
+// 금액·수량은 Decimal이 문자열로 직렬화되므로 Number()로 파싱한다.
+function fromApiTransaction(api: TransactionApiResponse): Transaction {
+  return {
+    id: api.id,
+    accountId: `${api.account.bank}-${api.account.number}`,
+    date: api.traded_at,
+    type: api.type.toUpperCase() as TransactionType,
+    ticker: api.ticker ?? '',
+    quantity: api.quantity != null ? Number(api.quantity) : 0,
+    amount: Number(api.amount.amount),
+    fee: api.fee != null ? Number(api.fee.amount) : 0,
+    tax: api.tax != null ? Number(api.tax.amount) : 0,
+    memo: '',
+    currency: api.amount.currency.toUpperCase(),
+  }
+}
 
 const FILTERS: { k: 'all' | TransactionKind; label: string; color: string }[] = [
   { k: 'all', label: '전체', color: 'var(--text-3)' },
@@ -203,11 +222,9 @@ function TransactionsPage() {
   const fetchTransactions = useCallback(async () => {
     setLoading(true)
     try {
-      const { data } = await apiClient.get<PaginatedResponse<Transaction>>(
-        '/transactions',
-        { params: { page: 1, size: 50 } },
-      )
-      setTransactions(data.data)
+      const { data } =
+        await apiClient.get<TransactionApiResponse[]>('/v1/transactions')
+      setTransactions(Array.isArray(data) ? data.map(fromApiTransaction) : [])
     } catch {
       showToast({ message: '거래 내역을 불러오지 못했습니다', type: 'error' })
     } finally {
@@ -217,8 +234,8 @@ function TransactionsPage() {
 
   const fetchAccounts = useCallback(async () => {
     try {
-      const { data } = await apiClient.get<PaginatedResponse<Account>>('/accounts')
-      setAccounts(data.data)
+      const { data } = await apiClient.get<AccountApiResponse[]>('/v1/accounts')
+      setAccounts(Array.isArray(data) ? data.map(fromApiAccount) : [])
     } catch {
       // silent
     }
