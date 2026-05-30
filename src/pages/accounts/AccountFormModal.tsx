@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
-import { Button, Form, Input, Modal, Popconfirm, Select } from 'antd'
+import { Button, Divider, Form, Input, Modal, Popconfirm, Select } from 'antd'
 
 import type { Account, CreateAccountRequest } from '../../types/account'
+import { apiIdentity } from '../../utils/account'
+import AccountCredentialSection from './AccountCredentialSection'
 
 interface AccountFormModalProps {
   open: boolean
@@ -78,18 +80,19 @@ function AccountFormModal({
               <Button key="cancel" onClick={onClose}>
                 취소
               </Button>,
-              <Button key="ok" type="primary" loading={loading} onClick={handleOk}>
+              <Button
+                key="ok"
+                type="primary"
+                loading={loading}
+                onClick={handleOk}
+              >
                 수정
               </Button>,
             ]
           : undefined
       }
     >
-      <Form
-        form={form}
-        layout="vertical"
-        initialValues={{ bank: 'hantu' }}
-      >
+      <Form form={form} layout="vertical" initialValues={{ bank: 'hantu' }}>
         <Form.Item
           name="name"
           label="별칭"
@@ -124,6 +127,14 @@ function AccountFormModal({
           <Input placeholder="예: 홍길동" disabled={isEdit} />
         </Form.Item>
       </Form>
+
+      {/* 자격증명 연동은 계좌가 이미 존재해야 하므로 수정 모드에서만 노출한다. */}
+      {isEdit && account && (
+        <>
+          <Divider />
+          <AccountCredentialSection {...apiIdentity(account)} />
+        </>
+      )}
     </Modal>
   )
 }
