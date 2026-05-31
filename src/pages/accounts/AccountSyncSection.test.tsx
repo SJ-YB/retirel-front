@@ -78,9 +78,11 @@ describe('AccountSyncSection', () => {
         '/v1/accounts/hantu/123-456/transactions/sync',
       )
     })
-    // running 상태로 전환되면 버튼이 로딩(disabled)되어 중복 실행을 막는다.
+    // running 상태로 전환되면 진행 태그가 뜨고 버튼이 로딩 상태가 된다
+    // (antd 로딩 버튼은 disabled 속성 대신 loading 클래스로 중복 클릭을 막는다).
+    expect(await screen.findByText('동기화 중')).toBeInTheDocument()
     await waitFor(() => {
-      expect(screen.getByRole('button')).toBeDisabled()
+      expect(screen.getByRole('button').className).toContain('ant-btn-loading')
     })
   })
 
