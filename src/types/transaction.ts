@@ -63,3 +63,20 @@ export interface TransactionApiResponse {
   fee: MoneyApiResponse | null
   tax: MoneyApiResponse | null
 }
+
+// 거래내역 동기화 상태. idle: 이력 없음, running: 진행 중,
+// succeeded/failed: 마지막 동기화 결과.
+export type SyncState = 'idle' | 'running' | 'succeeded' | 'failed'
+
+// 백엔드(POST/GET /api/v1/accounts/{bank}/{number}/transactions/sync) 응답 본문.
+export interface SyncStatusResponse {
+  bank: string
+  number: string
+  state: SyncState
+  last_synced_at: string | null
+  last_error: string | null
+  started_at: string | null
+  finished_at: string | null
+  fetched: number | null
+  inserted: number | null
+}
