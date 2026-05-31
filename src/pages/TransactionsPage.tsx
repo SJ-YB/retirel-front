@@ -27,6 +27,7 @@ function fromApiTransaction(api: TransactionApiResponse): Transaction {
     date: api.traded_at,
     type: api.type.toUpperCase() as TransactionType,
     ticker: api.ticker ?? '',
+    name: api.name ?? '',
     quantity: api.quantity != null ? Number(api.quantity) : 0,
     amount: Number(api.amount.amount),
     fee: api.fee != null ? Number(api.fee.amount) : 0,
@@ -115,8 +116,11 @@ function TxRow({
   const sign = resolveSign(t)
   const account = accountMap.get(t.accountId)
   const ccy = (t.currency ?? account?.currency ?? 'KRW') as 'KRW' | 'USD'
-  // 종목코드 대신 종목이름으로 표기한다. 이름을 찾지 못하면 코드를 그대로 보여준다.
-  const securityName = t.ticker ? (nameMap.get(t.ticker) ?? t.ticker) : ''
+  // 종목코드 대신 종목이름으로 표기한다.
+  // 백엔드가 내려준 이름을 우선 쓰고, 없으면 보유 종목 매핑, 최후에는 코드를 보여준다.
+  const securityName = t.ticker
+    ? (t.name || nameMap.get(t.ticker) || t.ticker)
+    : ''
   const title = securityName
     ? `${securityName}${t.memo ? ` — ${t.memo.split(' · ')[0]}` : ''}`
     : kind
@@ -286,9 +290,9 @@ function TransactionsPage() {
       const kind = resolveKind(t)
       if (filter !== 'all' && kind !== filter) return false
       if (search) {
-        const name = t.ticker ? (nameMap.get(t.ticker) ?? '') : ''
+        const mappedName = t.ticker ? (nameMap.get(t.ticker) ?? '') : ''
         const haystack =
-          `${t.ticker} ${name} ${t.memo} ${kind} ${t.amount}`.toLowerCase()
+          `${t.ticker} ${t.name ?? ''} ${mappedName} ${t.memo} ${kind} ${t.amount}`.toLowerCase()
         if (!haystack.includes(search.toLowerCase())) return false
       }
       return true

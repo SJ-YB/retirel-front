@@ -28,6 +28,7 @@ export interface Transaction {
   date: string
   type: TransactionType
   ticker: string
+  name?: string
   quantity: number
   amount: number
   fee: number
@@ -59,6 +60,7 @@ export interface TransactionApiResponse {
   traded_at: string
   amount: MoneyApiResponse
   ticker: string | null
+  name: string | null
   quantity: string | null
   fee: MoneyApiResponse | null
   tax: MoneyApiResponse | null
