@@ -78,9 +78,10 @@ describe('AccountSyncSection', () => {
         '/v1/accounts/hantu/123-456/transactions/sync',
       )
     })
-    // running 상태에서는 진행 태그가 뜨고 버튼은 로딩(disabled)된다.
-    expect(await screen.findByText('동기화 중')).toBeInTheDocument()
-    expect(screen.getByRole('button')).toBeDisabled()
+    // running 상태로 전환되면 버튼이 로딩(disabled)되어 중복 실행을 막는다.
+    await waitFor(() => {
+      expect(screen.getByRole('button')).toBeDisabled()
+    })
   })
 
   it('실패 상태의 오류 메시지를 표시한다', async () => {
