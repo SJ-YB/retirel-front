@@ -134,6 +134,8 @@ function AccountFormModal({
         <>
           <Divider />
           <AccountCredentialSection {...apiIdentity(account)} />
+          <Divider />
+          <AccountSyncSection {...apiIdentity(account)} />
         </>
       )}
     </Modal>
