@@ -4,6 +4,7 @@ import { Button, Divider, Form, Input, Modal, Popconfirm, Select } from 'antd'
 import type { Account, CreateAccountRequest } from '../../types/account'
 import { apiIdentity } from '../../utils/account'
 import AccountCredentialSection from './AccountCredentialSection'
+import AccountSyncSection from './AccountSyncSection'
 
 interface AccountFormModalProps {
   open: boolean
@@ -133,6 +134,8 @@ function AccountFormModal({
         <>
           <Divider />
           <AccountCredentialSection {...apiIdentity(account)} />
+          <Divider />
+          <AccountSyncSection {...apiIdentity(account)} />
         </>
       )}
     </Modal>
