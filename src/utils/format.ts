@@ -46,6 +46,15 @@ export const fmt = {
     const day = d.getDate()
     return `${weekday} · ${m}월 ${day}일`
   },
+
+  // 거래 일자를 'YYYY MM DD' 형식으로 표기한다.
+  dateYmd: (iso: string): string => {
+    const d = new Date(iso + 'T00:00:00')
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y} ${m} ${day}`
+  },
 }
 
 export const USD_KRW_FALLBACK = 1364.2

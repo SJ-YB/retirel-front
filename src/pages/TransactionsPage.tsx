@@ -3,6 +3,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiClient } from '../api'
 import { useUiStore } from '../stores'
 import type { Account, AccountApiResponse } from '../types/account'
+import type { PaginatedResponse } from '../types/api'
+import type { Holding } from '../types/asset'
 import type {
   Transaction,
   TransactionApiResponse,
@@ -101,18 +103,22 @@ function resolveSign(t: Transaction): '+' | '-' {
 function TxRow({
   t,
   accountMap,
+  nameMap,
   isMobile,
 }: {
   t: Transaction
   accountMap: Map<string, Account>
+  nameMap: Map<string, string>
   isMobile: boolean
 }) {
   const kind = resolveKind(t)
   const sign = resolveSign(t)
   const account = accountMap.get(t.accountId)
   const ccy = (t.currency ?? account?.currency ?? 'KRW') as 'KRW' | 'USD'
-  const title = t.ticker
-    ? `${t.ticker}${t.memo ? ` — ${t.memo.split(' · ')[0]}` : ''}`
+  // 종목코드 대신 종목이름으로 표기한다. 이름을 찾지 못하면 코드를 그대로 보여준다.
+  const securityName = t.ticker ? (nameMap.get(t.ticker) ?? t.ticker) : ''
+  const title = securityName
+    ? `${securityName}${t.memo ? ` — ${t.memo.split(' · ')[0]}` : ''}`
     : kind
   const subParts: string[] = []
   if (account) subParts.push(account.name)
@@ -214,6 +220,7 @@ function TransactionsPage() {
   const isMobile = useIsMobile()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [holdings, setHoldings] = useState<Holding[]>([])
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState<'all' | TransactionKind>('all')
   const [search, setSearch] = useState('')
@@ -241,9 +248,24 @@ function TransactionsPage() {
     }
   }, [])
 
+  // 종목코드 → 종목이름 매핑을 위해 보유 종목을 불러온다.
+  const fetchHoldings = useCallback(async () => {
+    try {
+      const { data } =
+        await apiClient.get<PaginatedResponse<Holding>>('/assets/holdings')
+      setHoldings(Array.isArray(data?.data) ? data.data : [])
+    } catch {
+      // silent
+    }
+  }, [])
+
   useEffect(() => {
     fetchAccounts()
   }, [fetchAccounts])
+
+  useEffect(() => {
+    fetchHoldings()
+  }, [fetchHoldings])
 
   useEffect(() => {
     fetchTransactions()
@@ -254,17 +276,24 @@ function TransactionsPage() {
     [accounts],
   )
 
+  const nameMap = useMemo(
+    () => new Map(holdings.map((h) => [h.ticker, h.name])),
+    [holdings],
+  )
+
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
       const kind = resolveKind(t)
       if (filter !== 'all' && kind !== filter) return false
       if (search) {
-        const haystack = `${t.ticker} ${t.memo} ${kind} ${t.amount}`.toLowerCase()
+        const name = t.ticker ? (nameMap.get(t.ticker) ?? '') : ''
+        const haystack =
+          `${t.ticker} ${name} ${t.memo} ${kind} ${t.amount}`.toLowerCase()
         if (!haystack.includes(search.toLowerCase())) return false
       }
       return true
     })
-  }, [transactions, filter, search])
+  }, [transactions, filter, search, nameMap])
 
   const groups = useMemo(() => {
     const map = new Map<string, Transaction[]>()
@@ -374,8 +403,8 @@ function TransactionsPage() {
                         gap: isMobile ? 2 : 0,
                       }}
                     >
-                      <div className="serif" style={{ fontSize: isMobile ? 13 : 14, color: 'var(--text-2)' }}>
-                        {fmt.dayLabel(date)}
+                      <div className="serif mono" style={{ fontSize: isMobile ? 13 : 14, color: 'var(--text-2)' }}>
+                        {fmt.dateYmd(date)}
                       </div>
                       <div className="mono" style={{ fontSize: 11, color: 'var(--text-3)' }}>
                         {items.length} transaction{items.length > 1 ? 's' : ''}
@@ -390,7 +419,7 @@ function TransactionsPage() {
                       </div>
                     </div>
                     {items.map((t) => (
-                      <TxRow key={t.id} t={t} accountMap={accountMap} isMobile={isMobile} />
+                      <TxRow key={t.id} t={t} accountMap={accountMap} nameMap={nameMap} isMobile={isMobile} />
                     ))}
                   </div>
                 )
