@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Alert, Button, Space, Tag, Typography } from 'antd'
+import { Alert, Button, Popconfirm, Space, Tag, Typography } from 'antd'
 import axios from 'axios'
 
 import { apiClient } from '../../api'
@@ -39,11 +39,13 @@ function AccountSyncSection({ bank, number }: AccountSyncSectionProps) {
   const { showToast } = useUiStore()
   const [status, setStatus] = useState<SyncStatusResponse | null>(null)
   const [triggering, setTriggering] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const basePath = `/v1/accounts/${encodeURIComponent(bank)}/${encodeURIComponent(
+  const txPath = `/v1/accounts/${encodeURIComponent(bank)}/${encodeURIComponent(
     number,
-  )}/transactions/sync`
+  )}/transactions`
+  const basePath = `${txPath}/sync`
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -90,6 +92,31 @@ function AccountSyncSection({ bank, number }: AccountSyncSectionProps) {
     }
   }
 
+  // 계좌의 거래내역을 전부 삭제한다. 삭제 후 동기화하면 전체 기간을 새로
+  // 받아오므로(종목명 등 보강 포함), 잘못 적재됐거나 갱신이 필요할 때 쓴다.
+  const handleDeleteAll = async () => {
+    setDeleting(true)
+    try {
+      const { data } = await apiClient.delete<{ deleted: number }>(txPath)
+      showToast({
+        message: `거래내역 ${data.deleted}건을 삭제했습니다. 동기화하면 새로 받아옵니다`,
+        type: 'success',
+      })
+      await fetchStatus()
+    } catch (err) {
+      const httpStatus = axios.isAxiosError(err)
+        ? err.response?.status
+        : undefined
+      const message =
+        httpStatus === 409
+          ? '동기화가 진행 중입니다. 완료 후 다시 시도해주세요'
+          : '거래내역을 삭제하지 못했습니다'
+      showToast({ message, type: 'error' })
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const state: SyncState = status?.state ?? 'idle'
   const tag = STATE_TAG[state]
   const lastSyncedAt = formatDateTime(status?.last_synced_at ?? null)
@@ -128,13 +155,28 @@ function AccountSyncSection({ bank, number }: AccountSyncSectionProps) {
           />
         )}
 
-        <Button
-          type="primary"
-          loading={triggering || running}
-          onClick={handleSync}
-        >
-          {running ? '동기화 중…' : '거래내역 동기화'}
-        </Button>
+        <Space size="small" wrap>
+          <Button
+            type="primary"
+            loading={triggering || running}
+            onClick={handleSync}
+          >
+            {running ? '동기화 중…' : '거래내역 동기화'}
+          </Button>
+          <Popconfirm
+            title="거래내역 전체 삭제"
+            description="이 계좌의 거래내역을 모두 삭제합니다. 다시 동기화하면 전체 기간을 새로 받아옵니다."
+            okText="삭제"
+            okButtonProps={{ danger: true }}
+            cancelText="취소"
+            onConfirm={handleDeleteAll}
+            disabled={running || deleting}
+          >
+            <Button danger loading={deleting} disabled={running}>
+              거래내역 전체 삭제
+            </Button>
+          </Popconfirm>
+        </Space>
       </Space>
     </div>
   )
