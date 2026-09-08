@@ -15,6 +15,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: '/accounts', label: 'Accounts', icon: 'accounts' },
   { key: '/transactions', label: 'Transactions', icon: 'transactions', mobileLabel: 'Txns' },
   { key: '/assets', label: 'Assets', icon: 'assets' },
+  { key: '/watchlist', label: 'Watchlist', icon: 'dividend', mobileLabel: 'Watch' },
 ]
 
 function Sidebar() {
