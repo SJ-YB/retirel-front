@@ -17,7 +17,8 @@ const MARKETS: { value: Market; label: string }[] = [
   { value: 'krx', label: '국내 (KRX)' },
   { value: 'nas', label: '나스닥 (NAS)' },
   { value: 'nys', label: '뉴욕 (NYS)' },
-  { value: 'ams', label: '아멕스 (AMS)' },
+  // NYSE Arca 상장 ETF(SPY·SCHD 등)도 증권사 시세는 아멕스(AMS)로 묶여 있다.
+  { value: 'ams', label: '아멕스·NYSE Arca (AMS)' },
 ]
 
 const MARKET_LABEL: Record<Market, string> = {
@@ -32,7 +33,7 @@ const TICKER_PLACEHOLDER: Record<Market, string> = {
   krx: '005930 (6자리)',
   nas: 'NVDA',
   nys: 'BRK.B',
-  ams: 'SPY',
+  ams: 'SPY, SCHD',
 }
 
 function watchedKey(stock: WatchedStockResponse): string {
