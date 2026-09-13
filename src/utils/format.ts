@@ -1,6 +1,7 @@
 import type { Currency } from '../types/account'
 
-const safeRound = (n: number): number => (Number.isFinite(n) ? Math.round(n) : 0)
+const safeRound = (n: number): number =>
+  Number.isFinite(n) ? Math.round(n) : 0
 
 export const fmt = {
   krw: (n: number): string => `₩ ${safeRound(n).toLocaleString('en-US')}`,
@@ -32,6 +33,10 @@ export const fmt = {
   pct: (n: number, signed = true): string =>
     `${signed && n >= 0 ? '+' : ''}${n.toFixed(2)}%`,
 
+  // 보유 수량. 해외 주식은 소수점 단위로 거래되므로 반올림하지 않는다.
+  shares: (n: number): string =>
+    n.toLocaleString('en-US', { maximumFractionDigits: 8 }),
+
   money: (n: number, ccy: Currency): string =>
     ccy === 'USD' ? fmt.usd2(n) : fmt.won(n),
 
@@ -40,7 +45,15 @@ export const fmt = {
 
   dayLabel: (iso: string): string => {
     const d = new Date(iso + 'T00:00:00')
-    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    const weekdays = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ]
     const weekday = weekdays[d.getDay()]
     const m = d.getMonth() + 1
     const day = d.getDate()
@@ -59,6 +72,10 @@ export const fmt = {
 
 export const USD_KRW_FALLBACK = 1364.2
 
-export function toKrw(value: number, currency: Currency, rate: number = USD_KRW_FALLBACK): number {
+export function toKrw(
+  value: number,
+  currency: Currency,
+  rate: number = USD_KRW_FALLBACK,
+): number {
   return currency === 'USD' ? value * rate : value
 }
