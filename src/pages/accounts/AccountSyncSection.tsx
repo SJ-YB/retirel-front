@@ -73,10 +73,15 @@ function AccountSyncSection({ bank, number }: AccountSyncSectionProps) {
     }
   }, [running, status, fetchStatus])
 
-  const handleSync = async () => {
+  // full=true면 마지막 거래 이후가 아니라 전체 기간을 다시 조회한다. 이미 있는
+  // 거래는 그대로 두고 빠진 것만 채우므로, 중간에 구멍이 난 거래내역을 지우지 않고
+  // 메울 때 쓴다(증분 동기화는 마지막 거래보다 앞선 구간을 다시 보지 않는다).
+  const handleSync = async (full = false) => {
     setTriggering(true)
     try {
-      const { data } = await apiClient.post<SyncStatusResponse>(basePath)
+      const { data } = await apiClient.post<SyncStatusResponse>(
+        full ? `${basePath}?full=true` : basePath,
+      )
       setStatus(data)
     } catch (err) {
       const httpStatus = axios.isAxiosError(err)
@@ -128,7 +133,9 @@ function AccountSyncSection({ bank, number }: AccountSyncSectionProps) {
       </Typography.Title>
       <Typography.Paragraph type="secondary" style={{ fontSize: 12 }}>
         한국투자증권에서 체결 거래내역을 가져옵니다. 마지막 거래 이후의 내역만
-        추가로 받아오며, 자동 연동도 백그라운드에서 주기적으로 동작합니다.
+        추가로 받아오며, 자동 연동도 백그라운드에서 주기적으로 동작합니다. 과거
+        내역이 비어 보이면 "전체 기간 다시 동기화"로 빠진 구간을 채울 수
+        있습니다.
       </Typography.Paragraph>
 
       <Space direction="vertical" size="middle" style={{ width: '100%' }}>
@@ -159,10 +166,22 @@ function AccountSyncSection({ bank, number }: AccountSyncSectionProps) {
           <Button
             type="primary"
             loading={triggering || running}
-            onClick={handleSync}
+            onClick={() => handleSync()}
           >
             {running ? '동기화 중…' : '거래내역 동기화'}
           </Button>
+          <Popconfirm
+            title="전체 기간 다시 동기화"
+            description="백필 시작일부터 전체 기간을 다시 조회합니다. 기존 거래는 그대로 두고 빠진 내역만 채웁니다(시간이 걸립니다)."
+            okText="다시 동기화"
+            cancelText="취소"
+            onConfirm={() => handleSync(true)}
+            disabled={running || triggering}
+          >
+            <Button loading={triggering || running} disabled={running}>
+              전체 기간 다시 동기화
+            </Button>
+          </Popconfirm>
           <Popconfirm
             title="거래내역 전체 삭제"
             description="이 계좌의 거래내역을 모두 삭제합니다. 다시 동기화하면 전체 기간을 새로 받아옵니다."
