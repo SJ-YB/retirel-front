@@ -13,12 +13,70 @@ interface ShareAdjustmentSectionProps {
   onChanged?: () => void | Promise<void>
 }
 
+// 서버가 거절한 이유를 사람이 읽을 문장으로 바꾼다.
+//
+// FastAPI는 detail의 모양이 두 가지다. 우리가 던진 HTTPException(400·409)은
+// 문자열이지만, 요청 스키마 검증에 걸린 422는 오류 객체의 '배열'이다. 배열을
+// 그대로 토스트에 넘기면 아무것도 안 보여서, 사용자 눈에는 버튼이 먹통인 것처럼
+// 보인다(그래서 어느 칸이 잘못됐는지도 알 수 없다).
+const FIELD_LABELS: Record<string, string> = {
+  ticker: '종목코드',
+  effective_date: '적용일',
+  old_shares: '전 주식 수',
+  new_shares: '후 주식 수',
+  memo: '메모',
+}
+
+function requestErrorMessage(err: unknown, fallback: string): string {
+  if (!axios.isAxiosError(err)) return fallback
+  if (err.response?.status === 409) return '이미 등록된 종목·적용일입니다'
+
+  const detail = (err.response?.data as { detail?: unknown } | undefined)
+    ?.detail
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) {
+    const first = detail[0] as { loc?: unknown[] } | undefined
+    // loc은 ['body', '<필드명>'] 형태다. 마지막 조각이 문제가 된 필드다.
+    const field = first?.loc?.[first.loc.length - 1]
+    const label = typeof field === 'string' ? FIELD_LABELS[field] : undefined
+    return label
+      ? `${label}을(를) 올바르게 입력하세요`
+      : '입력값이 올바르지 않습니다'
+  }
+  return fallback
+}
+
 const EMPTY_FORM = {
   ticker: '',
   effectiveDate: '',
   oldShares: '',
   newShares: '',
   memo: '',
+}
+
+// label은 기본이 inline이라 캡션과 입력칸이 한 줄에 붙는다. 열로 세워 둔다.
+const FIELD_STYLE = (basis: number): React.CSSProperties => ({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+  flex: `1 1 ${basis}px`,
+})
+
+/** 제출을 막아야 할 이유. 없으면 null. */
+function validate(form: typeof EMPTY_FORM): string | null {
+  if (!form.ticker.trim()) return '종목코드를 입력하세요'
+  if (!form.effectiveDate) return '적용일을 입력하세요'
+  for (const [value, label] of [
+    [form.oldShares, '전'],
+    [form.newShares, '후'],
+  ] as const) {
+    const trimmed = value.trim()
+    if (!trimmed) return `분할·병합 ${label} 주식 수를 입력하세요`
+    if (!Number.isFinite(Number(trimmed)) || Number(trimmed) <= 0) {
+      return `분할·병합 ${label} 주식 수는 0보다 큰 숫자여야 합니다`
+    }
+  }
+  return null
 }
 
 /**
@@ -56,8 +114,11 @@ function ShareAdjustmentSection({ onChanged }: ShareAdjustmentSectionProps) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!form.ticker.trim() || !form.effectiveDate) {
-      showToast({ message: '종목코드와 적용일을 입력하세요', type: 'error' })
+    // 비율 칸이 비면 서버는 422로 거절한다. 사용자에게는 어느 칸이 비었는지
+    // 알려주는 편이 낫다(0·음수·1:1 같은 도메인 규칙은 서버가 판정한다).
+    const invalid = validate(form)
+    if (invalid) {
+      showToast({ message: invalid, type: 'error' })
       return
     }
     setSubmitting(true)
@@ -78,15 +139,10 @@ function ShareAdjustmentSection({ onChanged }: ShareAdjustmentSectionProps) {
       await fetchAdjustments()
       await onChanged?.()
     } catch (err) {
-      const status = axios.isAxiosError(err) ? err.response?.status : undefined
-      const detail = axios.isAxiosError(err)
-        ? (err.response?.data as { detail?: string } | undefined)?.detail
-        : undefined
-      const message =
-        status === 409
-          ? '이미 등록된 종목·적용일입니다'
-          : (detail ?? '수량 조정을 등록하지 못했습니다')
-      showToast({ message, type: 'error' })
+      showToast({
+        message: requestErrorMessage(err, '수량 조정을 등록하지 못했습니다'),
+        type: 'error',
+      })
     } finally {
       setSubmitting(false)
     }
@@ -135,7 +191,7 @@ function ShareAdjustmentSection({ onChanged }: ShareAdjustmentSectionProps) {
           padding: '0 20px 16px',
         }}
       >
-        <label style={{ flex: '1 1 140px' }}>
+        <label style={FIELD_STYLE(140)}>
           <span className="label-caps">종목코드</span>
           <input
             className="input"
@@ -144,7 +200,7 @@ function ShareAdjustmentSection({ onChanged }: ShareAdjustmentSectionProps) {
             onChange={(e) => set('ticker')(e.target.value)}
           />
         </label>
-        <label style={{ flex: '1 1 150px' }}>
+        <label style={FIELD_STYLE(150)}>
           <span className="label-caps">적용일</span>
           <input
             className="input"
@@ -154,27 +210,27 @@ function ShareAdjustmentSection({ onChanged }: ShareAdjustmentSectionProps) {
             onChange={(e) => set('effectiveDate')(e.target.value)}
           />
         </label>
-        <label style={{ flex: '0 1 90px' }}>
-          <span className="label-caps">전</span>
+        <label style={FIELD_STYLE(110)}>
+          <span className="label-caps">병합·분할 전</span>
           <input
             className="input"
             inputMode="decimal"
-            placeholder="2"
+            aria-label="분할·병합 전 주식 수"
             value={form.oldShares}
             onChange={(e) => set('oldShares')(e.target.value)}
           />
         </label>
-        <label style={{ flex: '0 1 90px' }}>
-          <span className="label-caps">후</span>
+        <label style={FIELD_STYLE(110)}>
+          <span className="label-caps">병합·분할 후</span>
           <input
             className="input"
             inputMode="decimal"
-            placeholder="1"
+            aria-label="분할·병합 후 주식 수"
             value={form.newShares}
             onChange={(e) => set('newShares')(e.target.value)}
           />
         </label>
-        <label style={{ flex: '1 1 160px' }}>
+        <label style={FIELD_STYLE(160)}>
           <span className="label-caps">메모 (선택)</span>
           <input
             className="input"
