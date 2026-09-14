@@ -56,8 +56,12 @@ function fillForm() {
   fireEvent.change(screen.getByLabelText('적용일'), {
     target: { value: '2021-05-24' },
   })
-  fireEvent.change(screen.getByPlaceholderText('2'), { target: { value: '2' } })
-  fireEvent.change(screen.getByPlaceholderText('1'), { target: { value: '1' } })
+  fireEvent.change(screen.getByLabelText('분할·병합 전 주식 수'), {
+    target: { value: '2' },
+  })
+  fireEvent.change(screen.getByLabelText('분할·병합 후 주식 수'), {
+    target: { value: '1' },
+  })
 }
 
 afterEach(() => {
@@ -179,7 +183,7 @@ describe('ShareAdjustmentSection', () => {
     })
   })
 
-  it('종목코드와 적용일이 비면 등록하지 않는다', async () => {
+  it('종목코드가 비면 등록하지 않는다', async () => {
     respond([])
 
     render(<ShareAdjustmentSection />)
@@ -191,11 +195,96 @@ describe('ShareAdjustmentSection', () => {
       expect(showToast).toHaveBeenCalledWith(
         expect.objectContaining({
           type: 'error',
-          message: expect.stringContaining('적용일'),
+          message: expect.stringContaining('종목코드'),
         }),
       )
     })
     expect(mockedPost).not.toHaveBeenCalled()
+  })
+
+  it('비율 칸이 비면 서버에 보내지 않고 어느 칸인지 알린다', async () => {
+    // 비면 서버가 422로 거절한다. 그 전에 걸러 어느 칸이 비었는지 알려준다.
+    respond([])
+
+    render(<ShareAdjustmentSection />)
+    await screen.findByText('등록된 수량 조정이 없습니다')
+
+    fireEvent.change(screen.getByPlaceholderText('예: IAU'), {
+      target: { value: 'IAU' },
+    })
+    fireEvent.change(screen.getByLabelText('적용일'), {
+      target: { value: '2021-05-24' },
+    })
+    await userEvent.click(screen.getByRole('button', { name: '등록' }))
+
+    await waitFor(() => {
+      expect(showToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          message: expect.stringContaining('전 주식 수'),
+        }),
+      )
+    })
+    expect(mockedPost).not.toHaveBeenCalled()
+  })
+
+  it('비율이 0 이하면 서버에 보내지 않는다', async () => {
+    respond([])
+
+    render(<ShareAdjustmentSection />)
+    await screen.findByText('등록된 수량 조정이 없습니다')
+
+    fillForm()
+    fireEvent.change(screen.getByLabelText('분할·병합 후 주식 수'), {
+      target: { value: '0' },
+    })
+    await userEvent.click(screen.getByRole('button', { name: '등록' }))
+
+    await waitFor(() => {
+      expect(showToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          message: expect.stringContaining('0보다 큰'),
+        }),
+      )
+    })
+    expect(mockedPost).not.toHaveBeenCalled()
+  })
+
+  it('요청 검증 실패(422)는 어느 칸이 문제인지 알린다', async () => {
+    // FastAPI는 422에서 detail을 문자열이 아니라 오류 객체 배열로 준다. 그대로
+    // 토스트에 넘기면 아무것도 안 보여 버튼이 먹통인 것처럼 보였다.
+    respond([])
+    mockedPost.mockRejectedValue({
+      response: {
+        status: 422,
+        data: {
+          detail: [
+            {
+              loc: ['body', 'old_shares'],
+              type: 'decimal_parsing',
+              msg: 'Input should be a valid decimal',
+            },
+          ],
+        },
+      },
+    })
+    vi.spyOn(axios, 'isAxiosError').mockReturnValue(true)
+
+    render(<ShareAdjustmentSection />)
+    await screen.findByText('등록된 수량 조정이 없습니다')
+
+    fillForm()
+    await userEvent.click(screen.getByRole('button', { name: '등록' }))
+
+    await waitFor(() => {
+      expect(showToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'error',
+          message: expect.stringContaining('전 주식 수'),
+        }),
+      )
+    })
   })
 
   it('삭제를 확인하면 종목·적용일로 지우고 상위에 알린다', async () => {
