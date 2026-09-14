@@ -92,6 +92,17 @@ describe('fmt.money / fmt.moneyShort', () => {
   })
 })
 
+describe('fmt.shares', () => {
+  it('groups thousands', () => {
+    expect(fmt.shares(1_240)).toBe('1,240')
+  })
+
+  it('keeps fractional shares as traded', () => {
+    expect(fmt.shares(0.25)).toBe('0.25')
+    expect(fmt.shares(1.00000001)).toBe('1.00000001')
+  })
+})
+
 describe('fmt.dayLabel', () => {
   it('renders weekday and Korean month-day label', () => {
     expect(fmt.dayLabel('2026-04-17')).toBe('Friday · 4월 17일')

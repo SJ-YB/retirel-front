@@ -1,25 +1,23 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Button } from 'antd'
 
 import { apiClient } from '../api'
-import type { ApiResponse, PaginatedResponse } from '../types/api'
-import type { Holding, Debt, Deposit, AssetsSummary } from '../types/asset'
-import type { Currency } from '../types/account'
+import { useUiStore } from '../stores'
+import type { PaginatedResponse } from '../types/api'
+import type { Debt, Deposit } from '../types/asset'
+import type {
+  AggregateResultResponse,
+  ShareHoldingResponse,
+} from '../types/holding'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { fmt, toKrw } from '../utils/format'
+import { fmt } from '../utils/format'
 import PageHeader from '../components/ui/PageHeader'
 import Icon from '../components/ui/Icon'
 import type { IconName } from '../components/ui/Icon'
-import Sparkline from '../components/charts/Sparkline'
-import {
-  mockAssetsSummary,
-  mockDebts,
-  mockDeposits,
-  mockHoldings,
-} from '../mocks/data'
+import { mockDebts, mockDeposits } from '../mocks/data'
 
 type Tab = 'holdings' | 'debts' | 'deposits'
-type CurrencyFilter = '전체' | 'KRW' | 'USD'
-type Sort = '평가액' | '수익률' | '종목명'
+type Sort = '수량' | '종목명'
 
 function SummaryCard({
   label,
@@ -43,7 +41,10 @@ function SummaryCard({
       >
         {value}
       </div>
-      <div className="mono" style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}>
+      <div
+        className="mono"
+        style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}
+      >
         {sub}
       </div>
     </div>
@@ -106,7 +107,13 @@ function TickerBadge({ ticker, shrink }: { ticker: string; shrink?: boolean }) {
   )
 }
 
-function HoldingMobileCard({ h }: { h: Holding }) {
+/** 이 종목을 어느 계좌에서 들고 있는지. 여러 계좌면 개수만 보여준다. */
+function accountLabel(holding: ShareHoldingResponse): string {
+  if (holding.accounts.length === 1) return holding.accounts[0].number
+  return `${holding.accounts.length}개 계좌`
+}
+
+function HoldingMobileCard({ h }: { h: ShareHoldingResponse }) {
   return (
     <div
       style={{
@@ -123,66 +130,61 @@ function HoldingMobileCard({ h }: { h: Holding }) {
           <div className="mono" style={{ fontSize: 12, color: 'var(--text)' }}>
             {h.ticker}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {h.name}
+          <div
+            style={{
+              fontSize: 11,
+              color: 'var(--text-3)',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {h.name ?? ''}
           </div>
         </div>
-        <div className="mono" style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>
-          {h.quantity.toLocaleString()} × {h.currency === 'USD' ? `$${h.currentPrice.toFixed(2)}` : `₩${h.currentPrice.toLocaleString()}`}
+        <div
+          className="mono"
+          style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}
+        >
+          {accountLabel(h)} · {fmt.dateYmd(h.as_of)}
         </div>
       </div>
       <div style={{ textAlign: 'right', flexShrink: 0 }}>
         <div className="mono" style={{ fontSize: 13, color: 'var(--text)' }}>
-          {fmt.moneyShort(h.totalValue, h.currency)}
+          {fmt.shares(Number(h.quantity))}
         </div>
-        <div
-          className="mono"
-          style={{
-            fontSize: 11,
-            color: h.returnPct >= 0 ? 'var(--pos)' : 'var(--neg)',
-            marginTop: 2,
-          }}
-        >
-          {fmt.pct(h.returnPct)}
+        <div className="label-caps" style={{ fontSize: 9, marginTop: 2 }}>
+          주
         </div>
       </div>
     </div>
   )
 }
 
-function HoldingRow({ h }: { h: Holding }) {
+function HoldingRow({ h }: { h: ShareHoldingResponse }) {
   return (
     <tr>
       <td style={{ paddingLeft: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <TickerBadge ticker={h.ticker} />
           <div>
-            <div className="mono" style={{ fontSize: 12, color: 'var(--text)' }}>
+            <div
+              className="mono"
+              style={{ fontSize: 12, color: 'var(--text)' }}
+            >
               {h.ticker}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{h.name}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+              {h.name ?? ''}
+            </div>
           </div>
         </div>
       </td>
-      <td style={{ fontSize: 12, color: 'var(--text-2)' }}>{h.account}</td>
-      <td className="mono" style={{ textAlign: 'right', fontSize: 12 }}>
-        {h.quantity.toLocaleString()}
+      <td className="mono" style={{ fontSize: 12, color: 'var(--text-2)' }}>
+        {accountLabel(h)}
       </td>
-      <td className="mono" style={{ textAlign: 'right', fontSize: 12, color: 'var(--text-2)' }}>
-        {h.currency === 'USD' ? `$ ${h.avgPrice.toFixed(2)}` : `₩ ${h.avgPrice.toLocaleString()}`}
-      </td>
-      <td className="mono" style={{ textAlign: 'right', fontSize: 12 }}>
-        {h.currency === 'USD'
-          ? `$ ${h.currentPrice.toFixed(2)}`
-          : `₩ ${h.currentPrice.toLocaleString()}`}
-      </td>
-      <td className="mono" style={{ textAlign: 'right', fontSize: 12 }}>
-        {fmt.moneyShort(h.totalValue, h.currency)}
-      </td>
-      <td style={{ textAlign: 'center' }}>
-        <div style={{ display: 'inline-block' }}>
-          <Sparkline data={h.trend24} />
-        </div>
+      <td className="mono" style={{ textAlign: 'right', fontSize: 13 }}>
+        {fmt.shares(Number(h.quantity))}
       </td>
       <td
         className="mono"
@@ -190,10 +192,10 @@ function HoldingRow({ h }: { h: Holding }) {
           textAlign: 'right',
           paddingRight: 20,
           fontSize: 12,
-          color: h.returnPct >= 0 ? 'var(--pos)' : 'var(--neg)',
+          color: 'var(--text-3)',
         }}
       >
-        {fmt.pct(h.returnPct)}
+        {fmt.dateYmd(h.as_of)}
       </td>
     </tr>
   )
@@ -202,7 +204,10 @@ function HoldingRow({ h }: { h: Holding }) {
 function DebtCard({ d }: { d: Debt }) {
   const remaining = d.amount * (1 - d.progressPct / 100)
   return (
-    <div className="card" style={{ position: 'relative', padding: 18, overflow: 'hidden' }}>
+    <div
+      className="card"
+      style={{ position: 'relative', padding: 18, overflow: 'hidden' }}
+    >
       <div className="stripe" style={{ background: 'var(--rose)' }} />
       <div
         style={{
@@ -240,7 +245,8 @@ function DebtCard({ d }: { d: Debt }) {
         − {d.amount.toLocaleString()}원
       </div>
       <div className="mono" style={{ fontSize: 11, color: 'var(--text-3)' }}>
-        상환 진행률 {d.progressPct}% · {(remaining / 1e6).toFixed(0)}M / {(d.amount / 1e6).toFixed(0)}M
+        상환 진행률 {d.progressPct}% · {(remaining / 1e6).toFixed(0)}M /{' '}
+        {(d.amount / 1e6).toFixed(0)}M
       </div>
 
       <div
@@ -262,9 +268,18 @@ function DebtCard({ d }: { d: Debt }) {
         />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 8,
+        }}
+      >
         <MiniStat label="금리" value={`${d.rate}% ${d.rateType}`} />
-        <MiniStat label="월 상환" value={`${(d.monthlyPayment / 1e6).toFixed(2)}M`} />
+        <MiniStat
+          label="월 상환"
+          value={`${(d.monthlyPayment / 1e6).toFixed(2)}M`}
+        />
         <MiniStat label="만기" value={d.maturity} />
       </div>
     </div>
@@ -273,7 +288,10 @@ function DebtCard({ d }: { d: Debt }) {
 
 function DepositCard({ d }: { d: Deposit }) {
   return (
-    <div className="card" style={{ position: 'relative', padding: 18, overflow: 'hidden' }}>
+    <div
+      className="card"
+      style={{ position: 'relative', padding: 18, overflow: 'hidden' }}
+    >
       <div className="stripe" style={{ background: 'var(--sky)' }} />
       <div
         style={{
@@ -323,30 +341,51 @@ function DepositCard({ d }: { d: Deposit }) {
   )
 }
 
+/**
+ * 자산 화면.
+ *
+ * 보유 종목 탭은 백엔드가 거래내역을 누적해 집계해 둔 종목별 주식 수를 읽는다
+ * (화면이 거래내역을 직접 훑지 않는다). 부채·임대 보증금은 아직 백엔드가 없어
+ * mock으로 채운다.
+ */
 function AssetsPage() {
   const isMobile = useIsMobile()
+  const { showToast } = useUiStore()
   const [tab, setTab] = useState<Tab>('holdings')
-  const [ccyFilter, setCcyFilter] = useState<CurrencyFilter>('전체')
-  const [sort, setSort] = useState<Sort>('평가액')
+  const [sort, setSort] = useState<Sort>('수량')
 
-  const [holdings, setHoldings] = useState<Holding[]>(mockHoldings)
+  const [holdings, setHoldings] = useState<ShareHoldingResponse[]>([])
+  const [loadingHoldings, setLoadingHoldings] = useState(true)
+  const [aggregating, setAggregating] = useState(false)
   const [debts, setDebts] = useState<Debt[]>(mockDebts)
   const [deposits, setDeposits] = useState<Deposit[]>(mockDeposits)
-  const [summary, setSummary] = useState<AssetsSummary>(mockAssetsSummary)
+
+  const fetchHoldings = useCallback(async () => {
+    setLoadingHoldings(true)
+    try {
+      const { data } =
+        await apiClient.get<ShareHoldingResponse[]>('/v1/holdings')
+      setHoldings(data)
+    } catch {
+      showToast({ message: '보유 종목을 불러오지 못했습니다', type: 'error' })
+    } finally {
+      setLoadingHoldings(false)
+    }
+  }, [showToast])
+
+  useEffect(() => {
+    fetchHoldings()
+  }, [fetchHoldings])
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [h, d, dp, s] = await Promise.all([
-          apiClient.get<PaginatedResponse<Holding>>('/assets/holdings'),
+        const [d, dp] = await Promise.all([
           apiClient.get<PaginatedResponse<Debt>>('/assets/debts'),
           apiClient.get<PaginatedResponse<Deposit>>('/assets/deposits'),
-          apiClient.get<ApiResponse<AssetsSummary>>('/assets/summary'),
         ])
-        if (Array.isArray(h.data?.data)) setHoldings(h.data.data)
         if (Array.isArray(d.data?.data)) setDebts(d.data.data)
         if (Array.isArray(dp.data?.data)) setDeposits(dp.data.data)
-        if (s.data?.data) setSummary(s.data.data)
       } catch {
         // fall back to mocks already set
       }
@@ -354,23 +393,68 @@ function AssetsPage() {
     load()
   }, [])
 
-  const displayedHoldings = useMemo(() => {
-    const filtered =
-      ccyFilter === '전체'
-        ? holdings
-        : holdings.filter((h) => h.currency === (ccyFilter as Currency))
-    const sorted = [...filtered].sort((a, b) => {
-      if (sort === '평가액') return toKrw(b.totalValue, b.currency) - toKrw(a.totalValue, a.currency)
-      if (sort === '수익률') return b.returnPct - a.returnPct
-      return a.ticker.localeCompare(b.ticker)
-    })
-    return sorted
-  }, [holdings, ccyFilter, sort])
+  // 집계는 로컬 DB만 다시 읽는 짧은 작업이라 응답을 기다렸다가 표를 새로 읽는다
+  // (증권사 API를 호출하는 연동/종가 수집과 달리 폴링이 필요 없다).
+  const handleAggregate = async () => {
+    setAggregating(true)
+    try {
+      const { data } = await apiClient.post<AggregateResultResponse>(
+        '/v1/holdings/aggregate',
+      )
+      showToast({
+        message: `거래 ${data.trades}건을 집계했습니다`,
+        type: 'info',
+      })
+      await fetchHoldings()
+    } catch {
+      showToast({ message: '집계 요청에 실패했습니다', type: 'error' })
+    } finally {
+      setAggregating(false)
+    }
+  }
+
+  const displayedHoldings = useMemo(
+    () =>
+      [...holdings].sort((a, b) => {
+        if (sort === '수량') return Number(b.quantity) - Number(a.quantity)
+        return (a.name ?? a.ticker).localeCompare(b.name ?? b.ticker)
+      }),
+    [holdings, sort],
+  )
+
+  // 한 종목을 여러 계좌에 나눠 들고 있을 수 있어 계좌는 중복을 제거해 센다.
+  const accountCount = useMemo(
+    () =>
+      new Set(
+        holdings.flatMap((h) => h.accounts.map((a) => `${a.bank}:${a.number}`)),
+      ).size,
+    [holdings],
+  )
+
+  // 표가 어느 시점까지의 거래를 반영하는지. 종목별 마지막 변동일 중 가장 최근.
+  const lastChangedAt = useMemo(
+    () =>
+      holdings.reduce<string | null>(
+        (latest, h) => (latest == null || h.as_of > latest ? h.as_of : latest),
+        null,
+      ),
+    [holdings],
+  )
 
   const tabItems: { k: Tab; label: string; count: number; icon: IconName }[] = [
-    { k: 'holdings', label: '투자 종목', count: holdings.length, icon: 'spark-up' },
+    {
+      k: 'holdings',
+      label: '투자 종목',
+      count: holdings.length,
+      icon: 'spark-up',
+    },
     { k: 'debts', label: '부채', count: debts.length, icon: 'fee' },
-    { k: 'deposits', label: '임대 보증금', count: deposits.length, icon: 'home' },
+    {
+      k: 'deposits',
+      label: '임대 보증금',
+      count: deposits.length,
+      icon: 'home',
+    },
   ]
 
   return (
@@ -379,40 +463,11 @@ function AssetsPage() {
         title="Assets"
         meta={`${holdings.length} holdings · ${debts.length} debts · ${deposits.length} deposits`}
         right={
-          !isMobile ? (
-            <div className="seg">
-              {(['전체', 'KRW', 'USD'] as const).map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCcyFilter(c)}
-                  className={ccyFilter === c ? 'active' : ''}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          ) : undefined
+          <Button loading={aggregating} onClick={handleAggregate}>
+            <Icon name="refresh" size={14} /> 집계
+          </Button>
         }
       />
-
-      {isMobile && (
-        <div style={{ padding: '0 18px 12px' }}>
-          <div className="seg" style={{ width: '100%' }}>
-            {(['전체', 'KRW', 'USD'] as const).map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCcyFilter(c)}
-                className={ccyFilter === c ? 'active' : ''}
-                style={{ flex: 1 }}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div
         style={{
@@ -442,7 +497,8 @@ function AssetsPage() {
                 fontSize: 13,
                 color: tab === t.k ? 'var(--text)' : 'var(--text-3)',
                 borderBottom:
-                  '2px solid ' + (tab === t.k ? 'var(--accent)' : 'transparent'),
+                  '2px solid ' +
+                  (tab === t.k ? 'var(--accent)' : 'transparent'),
                 marginBottom: -1,
                 display: 'flex',
                 alignItems: 'center',
@@ -479,20 +535,19 @@ function AssetsPage() {
               }}
             >
               <SummaryCard
-                label="종목 평가액"
-                sub="KRX + 해외 환산 ₩1,364.20"
-                value={fmt.krwShort(summary.holdingsValue)}
+                label="보유 종목"
+                sub="거래내역 누적 · 전량 매도분 제외"
+                value={`${holdings.length}`}
               />
               <SummaryCard
-                label="평균 수익률"
-                sub="가중 평균 · 모든 계좌"
-                value={fmt.pct(summary.averageYieldPct)}
-                valueClass="pos"
+                label="보유 계좌"
+                sub="이 종목들을 들고 있는 계좌 수"
+                value={`${accountCount}`}
               />
               <SummaryCard
-                label="올해 누적 수입"
-                sub="배당 yield 1.33% · 시장 기대"
-                value={fmt.krwShort(summary.ytdIncome)}
+                label="최종 변동"
+                sub="수량이 마지막으로 바뀐 날"
+                value={lastChangedAt ? fmt.dateYmd(lastChangedAt) : '—'}
               />
             </div>
 
@@ -511,12 +566,12 @@ function AssetsPage() {
                   <div className="serif" style={{ fontSize: 18 }}>
                     보유 종목{' '}
                     <span className="muted" style={{ fontSize: 12 }}>
-                      — Top positions
+                      — 거래내역 누적 주식 수
                     </span>
                   </div>
                 </div>
                 <div className="seg">
-                  {(['평가액', '수익률', '종목명'] as const).map((s) => (
+                  {(['수량', '종목명'] as const).map((s) => (
                     <button
                       key={s}
                       type="button"
@@ -528,7 +583,28 @@ function AssetsPage() {
                   ))}
                 </div>
               </div>
-              {isMobile ? (
+              {loadingHoldings && holdings.length === 0 ? (
+                <div
+                  style={{
+                    padding: 40,
+                    textAlign: 'center',
+                    color: 'var(--text-3)',
+                  }}
+                >
+                  보유 종목을 불러오는 중...
+                </div>
+              ) : holdings.length === 0 ? (
+                <div
+                  style={{
+                    padding: 40,
+                    textAlign: 'center',
+                    color: 'var(--text-3)',
+                  }}
+                >
+                  집계된 보유 종목이 없습니다. 계좌를 연동한 뒤 집계를
+                  실행하세요
+                </div>
+              ) : isMobile ? (
                 <div>
                   {displayedHoldings.map((h) => (
                     <HoldingMobileCard key={h.ticker} h={h} />
@@ -541,12 +617,10 @@ function AssetsPage() {
                       <tr>
                         <th style={{ paddingLeft: 20 }}>티커</th>
                         <th>계좌</th>
-                        <th style={{ textAlign: 'right' }}>수량</th>
-                        <th style={{ textAlign: 'right' }}>평균가</th>
-                        <th style={{ textAlign: 'right' }}>현재가</th>
-                        <th style={{ textAlign: 'right' }}>평가액</th>
-                        <th style={{ textAlign: 'center' }}>추이</th>
-                        <th style={{ textAlign: 'right', paddingRight: 20 }}>수익률</th>
+                        <th style={{ textAlign: 'right' }}>보유 수량</th>
+                        <th style={{ textAlign: 'right', paddingRight: 20 }}>
+                          최종 변동일
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -565,7 +639,9 @@ function AssetsPage() {
           <div
             className="grid"
             style={{
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',
+              gridTemplateColumns: isMobile
+                ? '1fr'
+                : 'repeat(auto-fill, minmax(320px, 1fr))',
               gap: 16,
             }}
           >
@@ -579,7 +655,9 @@ function AssetsPage() {
           <div
             className="grid"
             style={{
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))',
+              gridTemplateColumns: isMobile
+                ? '1fr'
+                : 'repeat(auto-fill, minmax(320px, 1fr))',
               gap: 16,
             }}
           >
