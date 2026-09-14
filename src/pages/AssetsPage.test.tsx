@@ -4,10 +4,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import AssetsPage from './AssetsPage'
 import { apiClient } from '../api'
-import type { ShareHoldingResponse } from '../types/holding'
+import type {
+  ShareAdjustmentResponse,
+  ShareHoldingResponse,
+} from '../types/holding'
 
 vi.mock('../api', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn() },
+  apiClient: { get: vi.fn(), post: vi.fn(), delete: vi.fn() },
 }))
 
 // vi.mock 팩토리는 호이스팅되므로, 그 안에서 참조하는 스파이도 vi.hoisted로
@@ -41,9 +44,22 @@ function summaryCard(label: string): HTMLElement {
     .closest('.card') as HTMLElement
 }
 
-function respond(holdings: ShareHoldingResponse[]) {
+/**
+ * 보유 종목 표. 페이지에는 수량 조정 표(antd)도 함께 있어 role 질의만으로는
+ * 두 표가 섞인다. 보유 종목 표는 페이지 공용 클래스(.tbl)를 쓴다.
+ */
+function holdingsTable(): HTMLElement {
+  return document.querySelector('table.tbl') as HTMLElement
+}
+
+function respond(
+  holdings: ShareHoldingResponse[],
+  adjustments: ShareAdjustmentResponse[] = [],
+) {
   mockedGet.mockImplementation((url: string) => {
     if (url === '/v1/holdings') return Promise.resolve({ data: holdings })
+    if (url === '/v1/holdings/adjustments')
+      return Promise.resolve({ data: adjustments })
     return Promise.reject(new Error('not implemented'))
   })
 }
@@ -60,7 +76,7 @@ describe('AssetsPage', () => {
     render(<AssetsPage />)
 
     expect(await screen.findByText('삼성전자')).toBeInTheDocument()
-    const row = within(screen.getByRole('table')).getAllByRole('row')[1]
+    const row = within(holdingsTable()).getAllByRole('row')[1]
     expect(within(row).getByText('005930')).toBeInTheDocument()
     expect(within(row).getByText('30')).toBeInTheDocument()
     expect(within(row).getByText('12345678-01')).toBeInTheDocument()
@@ -99,13 +115,14 @@ describe('AssetsPage', () => {
 
     render(<AssetsPage />)
 
-    const rows = await screen.findAllByRole('row')
+    expect(await screen.findByText('Apple')).toBeInTheDocument()
     // 헤더 다음이 첫 종목이다.
+    const rows = within(holdingsTable()).getAllByRole('row')
     expect(within(rows[1]).getByText('AAPL')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: '종목명' }))
 
-    const sorted = screen.getAllByRole('row')
+    const sorted = within(holdingsTable()).getAllByRole('row')
     expect(within(sorted[1]).getByText('Apple')).toBeInTheDocument()
   })
 

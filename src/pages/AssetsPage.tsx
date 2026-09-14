@@ -15,6 +15,7 @@ import PageHeader from '../components/ui/PageHeader'
 import Icon from '../components/ui/Icon'
 import type { IconName } from '../components/ui/Icon'
 import { mockDebts, mockDeposits } from '../mocks/data'
+import ShareAdjustmentSection from './assets/ShareAdjustmentSection'
 
 type Tab = 'holdings' | 'debts' | 'deposits'
 type Sort = '수량' | '종목명'
@@ -632,6 +633,8 @@ function AssetsPage() {
                 </div>
               )}
             </div>
+
+            <ShareAdjustmentSection onChanged={fetchHoldings} />
           </>
         )}
 
