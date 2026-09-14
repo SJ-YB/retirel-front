@@ -89,6 +89,27 @@ describe('AccountSyncSection', () => {
     })
   })
 
+  it('전체 기간 다시 동기화는 full=true로 요청한다', async () => {
+    mockedGet.mockResolvedValue({ data: status({ state: 'succeeded' }) })
+    mockedPost.mockResolvedValue({ data: status({ state: 'running' }) })
+
+    renderSection()
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: '전체 기간 다시 동기화' }),
+    )
+    // Popconfirm 확인 버튼을 눌러야 실제 요청이 나간다.
+    await userEvent.click(
+      await screen.findByRole('button', { name: '다시 동기화' }),
+    )
+
+    await waitFor(() => {
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/v1/accounts/hantu/123-456/transactions/sync?full=true',
+      )
+    })
+  })
+
   it('실패 상태의 오류 메시지를 표시한다', async () => {
     mockedGet.mockResolvedValue({
       data: status({ state: 'failed', last_error: 'KIS 점검 중' }),
