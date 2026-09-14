@@ -14,12 +14,6 @@ export interface DashboardSummary {
   deposit: { value: number; nextMaturity: string }
 }
 
-export interface NetWorthTrendPoint {
-  label: string
-  netWorth: number
-  deposits: number
-}
-
 export interface AllocationSlice {
   key: string
   label: string

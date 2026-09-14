@@ -4,7 +4,6 @@
 import type { Account } from '../types/account'
 import type {
   DashboardSummary,
-  NetWorthTrendPoint,
   AllocationSlice,
   IncomeHistoryPoint,
 } from '../types/dashboard'
@@ -271,15 +270,6 @@ export const mockDashboardSummary: DashboardSummary = {
   deposit: { value: 180_000_000, nextMaturity: "'27.08" },
 }
 
-export const mockNetWorthTrend: NetWorthTrendPoint[] = [
-  { label: "NOV '25", netWorth: 1.58, deposits: 1.42 },
-  { label: 'DEC', netWorth: 1.62, deposits: 1.45 },
-  { label: "JAN '26", netWorth: 1.66, deposits: 1.49 },
-  { label: 'FEB', netWorth: 1.72, deposits: 1.53 },
-  { label: 'MAR', netWorth: 1.78, deposits: 1.58 },
-  { label: 'APR', netWorth: 1.847, deposits: 1.63 },
-]
-
 export const mockAllocation: AllocationSlice[] = [
   { key: 'stocks', label: '주식 · ETF', pct: 62.0, color: 'var(--accent)' },
   { key: 'deposit', label: '예금', pct: 22.2, color: 'var(--sky)' },
@@ -302,17 +292,100 @@ export const mockIncomeHistory: IncomeHistoryPoint[] = [
 ]
 
 // ── 보유 종목 ───────────────────────────────────────────
-const trendUp = [0.6, 0.62, 0.58, 0.66, 0.64, 0.7, 0.72, 0.68, 0.76, 0.78, 0.74, 0.82, 0.8, 0.86, 0.88, 0.84, 0.92, 0.9, 0.96, 0.94, 1.0, 0.98, 1.04, 1.08]
-const trendDown = [1.0, 0.98, 0.94, 0.9, 0.92, 0.86, 0.84, 0.82, 0.78, 0.8, 0.74, 0.72, 0.68, 0.7, 0.64, 0.62, 0.6, 0.56, 0.58, 0.52, 0.5, 0.48, 0.46, 0.44]
+const trendUp = [
+  0.6, 0.62, 0.58, 0.66, 0.64, 0.7, 0.72, 0.68, 0.76, 0.78, 0.74, 0.82, 0.8,
+  0.86, 0.88, 0.84, 0.92, 0.9, 0.96, 0.94, 1.0, 0.98, 1.04, 1.08,
+]
+const trendDown = [
+  1.0, 0.98, 0.94, 0.9, 0.92, 0.86, 0.84, 0.82, 0.78, 0.8, 0.74, 0.72, 0.68,
+  0.7, 0.64, 0.62, 0.6, 0.56, 0.58, 0.52, 0.5, 0.48, 0.46, 0.44,
+]
 
 export const mockHoldings: Holding[] = [
-  { ticker: 'NVDA', name: 'NVIDIA Corp', account: 'US Growth', quantity: 124, avgPrice: 612.4, currentPrice: 932.18, totalValue: 115_590, currency: 'USD', trend24: trendUp, returnPct: 52.22 },
-  { ticker: '005930', name: '삼성전자', account: '국내 메인', quantity: 1240, avgPrice: 68_200, currentPrice: 84_500, totalValue: 104_800_000, currency: 'KRW', trend24: trendUp, returnPct: 23.9 },
-  { ticker: 'VTI', name: 'Vanguard Total Stock', account: 'IBKR Joint', quantity: 362, avgPrice: 218.4, currentPrice: 284.22, totalValue: 102_889, currency: 'USD', trend24: trendUp, returnPct: 30.14 },
-  { ticker: 'SCHD', name: 'Schwab US Dividend ETF', account: 'IBKR Joint', quantity: 923, avgPrice: 72.8, currentPrice: 78.42, totalValue: 72_388, currency: 'USD', trend24: trendUp, returnPct: 7.72 },
-  { ticker: '360750', name: 'TIGER 미국S&P500', account: '배우자 ISA', quantity: 4820, avgPrice: 17_480, currentPrice: 21_950, totalValue: 105_800_000, currency: 'KRW', trend24: trendUp, returnPct: 25.57 },
-  { ticker: 'AAPL', name: 'Apple Inc', account: 'US Growth', quantity: 268, avgPrice: 164.2, currentPrice: 182.4, totalValue: 51_872, currency: 'USD', trend24: trendUp, returnPct: 11.08 },
-  { ticker: '035420', name: 'NAVER', account: '국내 메인', quantity: 168, avgPrice: 212_680, currentPrice: 186_530, totalValue: 31_337_040, currency: 'KRW', trend24: trendDown, returnPct: -12.3 },
+  {
+    ticker: 'NVDA',
+    name: 'NVIDIA Corp',
+    account: 'US Growth',
+    quantity: 124,
+    avgPrice: 612.4,
+    currentPrice: 932.18,
+    totalValue: 115_590,
+    currency: 'USD',
+    trend24: trendUp,
+    returnPct: 52.22,
+  },
+  {
+    ticker: '005930',
+    name: '삼성전자',
+    account: '국내 메인',
+    quantity: 1240,
+    avgPrice: 68_200,
+    currentPrice: 84_500,
+    totalValue: 104_800_000,
+    currency: 'KRW',
+    trend24: trendUp,
+    returnPct: 23.9,
+  },
+  {
+    ticker: 'VTI',
+    name: 'Vanguard Total Stock',
+    account: 'IBKR Joint',
+    quantity: 362,
+    avgPrice: 218.4,
+    currentPrice: 284.22,
+    totalValue: 102_889,
+    currency: 'USD',
+    trend24: trendUp,
+    returnPct: 30.14,
+  },
+  {
+    ticker: 'SCHD',
+    name: 'Schwab US Dividend ETF',
+    account: 'IBKR Joint',
+    quantity: 923,
+    avgPrice: 72.8,
+    currentPrice: 78.42,
+    totalValue: 72_388,
+    currency: 'USD',
+    trend24: trendUp,
+    returnPct: 7.72,
+  },
+  {
+    ticker: '360750',
+    name: 'TIGER 미국S&P500',
+    account: '배우자 ISA',
+    quantity: 4820,
+    avgPrice: 17_480,
+    currentPrice: 21_950,
+    totalValue: 105_800_000,
+    currency: 'KRW',
+    trend24: trendUp,
+    returnPct: 25.57,
+  },
+  {
+    ticker: 'AAPL',
+    name: 'Apple Inc',
+    account: 'US Growth',
+    quantity: 268,
+    avgPrice: 164.2,
+    currentPrice: 182.4,
+    totalValue: 51_872,
+    currency: 'USD',
+    trend24: trendUp,
+    returnPct: 11.08,
+  },
+  {
+    ticker: '035420',
+    name: 'NAVER',
+    account: '국내 메인',
+    quantity: 168,
+    avgPrice: 212_680,
+    currentPrice: 186_530,
+    totalValue: 31_337_040,
+    currency: 'KRW',
+    trend24: trendDown,
+    returnPct: -12.3,
+  },
 ]
 
 // ── 부채 ────────────────────────────────────────────────

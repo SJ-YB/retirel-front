@@ -1,4 +1,3 @@
-import type { NetWorthTrendPoint } from '../../types/dashboard'
 import {
   ResponsiveContainer,
   AreaChart,
@@ -9,20 +8,39 @@ import {
   Tooltip,
 } from 'recharts'
 import type { TooltipContentProps } from 'recharts'
-import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent'
+import type {
+  ValueType,
+  NameType,
+} from 'recharts/types/component/DefaultTooltipContent'
+
+import type { Currency } from '../../types/account'
+import { fmt } from '../../utils/format'
+
+export interface TrendPoint {
+  date: string
+  value: number
+}
 
 interface TrendChartProps {
-  series: NetWorthTrendPoint[]
+  points: TrendPoint[]
+  currency: Currency
   height?: number
   accent?: string
 }
 
-const TICK_STYLE = { fill: '#4E5870', fontFamily: 'JetBrains Mono', fontSize: 10 }
+const TICK_STYLE = {
+  fill: '#4E5870',
+  fontFamily: 'JetBrains Mono',
+  fontSize: 10,
+}
 
-function makeTooltip(accent: string) {
-  return function TrendTooltip({ active, payload }: TooltipContentProps<ValueType, NameType>) {
+function makeTooltip(currency: Currency, accent: string) {
+  return function TrendTooltip({
+    active,
+    payload,
+  }: TooltipContentProps<ValueType, NameType>) {
     if (!active || !payload || payload.length === 0) return null
-    const point = payload[0]?.payload as NetWorthTrendPoint | undefined
+    const point = payload[0]?.payload as TrendPoint | undefined
     if (!point) return null
     return (
       <div
@@ -36,26 +54,37 @@ function makeTooltip(accent: string) {
         }}
       >
         <div className="label-caps" style={{ marginBottom: 2 }}>
-          {point.label}
+          {fmt.dateYmd(point.date)}
         </div>
         <div className="mono" style={{ color: accent }}>
-          ₩ {point.netWorth.toFixed(2)}B
-        </div>
-        <div className="mono muted" style={{ fontSize: 11 }}>
-          deposits ₩ {point.deposits.toFixed(2)}B
+          {fmt.money(point.value, currency)}
         </div>
       </div>
     )
   }
 }
 
-function TrendChart({ series, height = 260, accent = '#F5C26B' }: TrendChartProps) {
+/**
+ * 일별 순자산 추이 차트.
+ *
+ * 구간 안에서의 움직임을 보는 것이 목적이라 Y축은 0이 아니라 데이터 범위에
+ * 맞춘다(0을 깔면 대부분의 일간 변동이 평평한 선으로 뭉개진다).
+ */
+function TrendChart({
+  points,
+  currency,
+  height = 260,
+  accent = '#F5C26B',
+}: TrendChartProps) {
   const gradientId = 'trendAreaFill'
-  const TooltipContent = makeTooltip(accent)
+  const TooltipContent = makeTooltip(currency, accent)
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={series} margin={{ top: 16, right: 16, bottom: 0, left: 0 }}>
+      <AreaChart
+        data={points}
+        margin={{ top: 16, right: 16, bottom: 0, left: 0 }}
+      >
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={accent} stopOpacity={0.35} />
@@ -67,48 +96,41 @@ function TrendChart({ series, height = 260, accent = '#F5C26B' }: TrendChartProp
         <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
 
         <XAxis
-          dataKey="label"
+          dataKey="date"
           tick={TICK_STYLE}
           axisLine={false}
           tickLine={false}
-          interval={0}
-          tickFormatter={(value: string) => value.split(' ')[0]}
+          minTickGap={40}
+          tickFormatter={(value: string) => value.slice(2).replace(/-/g, '.')}
         />
 
         <YAxis
-          tickFormatter={(v: number) => v.toFixed(2) + 'B'}
-          domain={['dataMin * 0.96', 'dataMax * 1.05']}
+          tickFormatter={(v: number) => fmt.moneyShort(v, currency)}
+          domain={['dataMin', 'dataMax']}
           axisLine={false}
           tickLine={false}
           tick={TICK_STYLE}
-          width={40}
+          width={64}
         />
 
         <Tooltip
           content={TooltipContent}
-          cursor={{ stroke: 'rgba(255,255,255,0.2)', strokeWidth: 1, strokeDasharray: '2 3' }}
+          cursor={{
+            stroke: 'rgba(255,255,255,0.2)',
+            strokeWidth: 1,
+            strokeDasharray: '2 3',
+          }}
         />
 
         <Area
           type="monotone"
-          dataKey="deposits"
-          stroke="var(--sky)"
-          strokeDasharray="2 4"
-          strokeWidth={1.5}
-          fill="none"
-          dot={false}
-          activeDot={false}
-          opacity={0.7}
-        />
-
-        <Area
-          type="monotone"
-          dataKey="netWorth"
+          dataKey="value"
           stroke={accent}
           strokeWidth={2}
           fill={`url(#${gradientId})`}
           dot={false}
           activeDot={{ r: 5, fill: accent, stroke: '#0B1220', strokeWidth: 2 }}
+          isAnimationActive={false}
         />
       </AreaChart>
     </ResponsiveContainer>

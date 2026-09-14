@@ -8,7 +8,6 @@ import {
   mockDeposits,
   mockAssetsSummary,
   mockDashboardSummary,
-  mockNetWorthTrend,
   mockAllocation,
   mockIncomeHistory,
 } from './data'
@@ -18,16 +17,21 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
 export const handlers = [
   // ── 대시보드 ──────────────────────────────────
   http.get(`${API_BASE}/dashboard/summary`, () =>
-    HttpResponse.json({ success: true, message: 'OK', data: mockDashboardSummary }),
-  ),
-  http.get(`${API_BASE}/dashboard/networth-trend`, () =>
-    HttpResponse.json({ success: true, message: 'OK', data: mockNetWorthTrend }),
+    HttpResponse.json({
+      success: true,
+      message: 'OK',
+      data: mockDashboardSummary,
+    }),
   ),
   http.get(`${API_BASE}/dashboard/allocation`, () =>
     HttpResponse.json({ success: true, message: 'OK', data: mockAllocation }),
   ),
   http.get(`${API_BASE}/dashboard/income-history`, () =>
-    HttpResponse.json({ success: true, message: 'OK', data: mockIncomeHistory }),
+    HttpResponse.json({
+      success: true,
+      message: 'OK',
+      data: mockIncomeHistory,
+    }),
   ),
 
   // ── 계좌 ──────────────────────────────────────
@@ -36,7 +40,12 @@ export const handlers = [
       success: true,
       message: 'OK',
       data: mockAccounts,
-      meta: { page: 1, size: 20, totalElements: mockAccounts.length, totalPages: 1 },
+      meta: {
+        page: 1,
+        size: 20,
+        totalElements: mockAccounts.length,
+        totalPages: 1,
+      },
     }),
   ),
 
@@ -78,14 +87,23 @@ export const handlers = [
 
   // ── 자산 ──────────────────────────────────────
   http.get(`${API_BASE}/assets/summary`, () =>
-    HttpResponse.json({ success: true, message: 'OK', data: mockAssetsSummary }),
+    HttpResponse.json({
+      success: true,
+      message: 'OK',
+      data: mockAssetsSummary,
+    }),
   ),
   http.get(`${API_BASE}/assets/holdings`, () =>
     HttpResponse.json({
       success: true,
       message: 'OK',
       data: mockHoldings,
-      meta: { page: 1, size: 20, totalElements: mockHoldings.length, totalPages: 1 },
+      meta: {
+        page: 1,
+        size: 20,
+        totalElements: mockHoldings.length,
+        totalPages: 1,
+      },
     }),
   ),
   http.get(`${API_BASE}/assets/debts`, () =>
@@ -93,7 +111,12 @@ export const handlers = [
       success: true,
       message: 'OK',
       data: mockDebts,
-      meta: { page: 1, size: 20, totalElements: mockDebts.length, totalPages: 1 },
+      meta: {
+        page: 1,
+        size: 20,
+        totalElements: mockDebts.length,
+        totalPages: 1,
+      },
     }),
   ),
   http.get(`${API_BASE}/assets/deposits`, () =>
@@ -101,7 +124,12 @@ export const handlers = [
       success: true,
       message: 'OK',
       data: mockDeposits,
-      meta: { page: 1, size: 20, totalElements: mockDeposits.length, totalPages: 1 },
+      meta: {
+        page: 1,
+        size: 20,
+        totalElements: mockDeposits.length,
+        totalPages: 1,
+      },
     }),
   ),
   // 하위 호환
@@ -110,7 +138,12 @@ export const handlers = [
       success: true,
       message: 'OK',
       data: mockHoldings,
-      meta: { page: 1, size: 20, totalElements: mockHoldings.length, totalPages: 1 },
+      meta: {
+        page: 1,
+        size: 20,
+        totalElements: mockHoldings.length,
+        totalPages: 1,
+      },
     }),
   ),
 ]
