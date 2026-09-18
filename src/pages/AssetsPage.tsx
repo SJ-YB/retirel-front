@@ -6,11 +6,13 @@ import { useUiStore } from '../stores'
 import type { PaginatedResponse } from '../types/api'
 import type { Debt, Deposit } from '../types/asset'
 import type {
+  AccountShareCountResponse,
   AggregateResultResponse,
   ShareHoldingResponse,
 } from '../types/holding'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { fmt } from '../utils/format'
+import { BANK_LABELS } from '../utils/account'
 import PageHeader from '../components/ui/PageHeader'
 import Icon from '../components/ui/Icon'
 import type { IconName } from '../components/ui/Icon'
@@ -114,91 +116,224 @@ function accountLabel(holding: ShareHoldingResponse): string {
   return `${holding.accounts.length}개 계좌`
 }
 
-function HoldingMobileCard({ h }: { h: ShareHoldingResponse }) {
+/**
+ * 펼친 종목의 계좌별 보유 수량. 합계에서 어느 계좌가 큰지 먼저 보이도록
+ * 수량이 많은 계좌부터 늘어놓는다.
+ */
+function AccountBreakdown({
+  accounts,
+  pad,
+}: {
+  accounts: AccountShareCountResponse[]
+  pad: number
+}) {
+  const sorted = [...accounts].sort(
+    (a, b) => Number(b.quantity) - Number(a.quantity),
+  )
   return (
     <div
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 12,
-        padding: '12px 14px',
-        borderBottom: '1px solid var(--border)',
+        margin: `2px 20px 10px ${pad}px`,
+        paddingLeft: 12,
+        borderLeft: '1px solid var(--border-hi)',
       }}
     >
-      <TickerBadge ticker={h.ticker} shrink />
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-          <div className="mono" style={{ fontSize: 12, color: 'var(--text)' }}>
-            {h.ticker}
-          </div>
+      {sorted.map((a) => (
+        <div
+          key={`${a.bank}:${a.number}`}
+          style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 10,
+            padding: '5px 0',
+          }}
+        >
           <div
             style={{
-              fontSize: 11,
-              color: 'var(--text-3)',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: 8,
             }}
           >
-            {h.name ?? ''}
+            <span style={{ fontSize: 12, color: 'var(--text-2)' }}>
+              {BANK_LABELS[a.bank] ?? a.bank}
+            </span>
+            <span
+              className="mono"
+              style={{
+                fontSize: 11,
+                color: 'var(--text-3)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {a.number}
+            </span>
+          </div>
+          <div className="mono" style={{ fontSize: 12, flexShrink: 0 }}>
+            <span style={{ color: 'var(--text)' }}>
+              {fmt.shares(Number(a.quantity))}
+            </span>{' '}
+            <span style={{ color: 'var(--text-3)' }}>주</span>
           </div>
         </div>
-        <div
-          className="mono"
-          style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}
-        >
-          {accountLabel(h)} · {fmt.dateYmd(h.as_of)}
-        </div>
-      </div>
-      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-        <div className="mono" style={{ fontSize: 13, color: 'var(--text)' }}>
-          {fmt.shares(Number(h.quantity))}
-        </div>
-        <div className="label-caps" style={{ fontSize: 9, marginTop: 2 }}>
-          주
-        </div>
-      </div>
+      ))}
     </div>
   )
 }
 
-function HoldingRow({ h }: { h: ShareHoldingResponse }) {
+/** 행을 펼쳤는지 알려주는 화살표. */
+function ExpandChevron({ open }: { open: boolean }) {
   return (
-    <tr>
-      <td style={{ paddingLeft: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <TickerBadge ticker={h.ticker} />
-          <div>
+    <Icon
+      name={open ? 'chevron-down' : 'chevron-right'}
+      size={14}
+      color="var(--text-3)"
+    />
+  )
+}
+
+function HoldingMobileCard({ h }: { h: ShareHoldingResponse }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div style={{ borderBottom: '1px solid var(--border)' }}>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        style={{
+          width: '100%',
+          textAlign: 'left',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          padding: '12px 14px',
+        }}
+      >
+        <ExpandChevron open={open} />
+        <TickerBadge ticker={h.ticker} shrink />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
             <div
               className="mono"
               style={{ fontSize: 12, color: 'var(--text)' }}
             >
               {h.ticker}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+            <div
+              style={{
+                fontSize: 11,
+                color: 'var(--text-3)',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
               {h.name ?? ''}
             </div>
           </div>
+          <div
+            className="mono"
+            style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}
+          >
+            {accountLabel(h)} · {fmt.dateYmd(h.as_of)}
+          </div>
         </div>
-      </td>
-      <td className="mono" style={{ fontSize: 12, color: 'var(--text-2)' }}>
-        {accountLabel(h)}
-      </td>
-      <td className="mono" style={{ textAlign: 'right', fontSize: 13 }}>
-        {fmt.shares(Number(h.quantity))}
-      </td>
-      <td
-        className="mono"
-        style={{
-          textAlign: 'right',
-          paddingRight: 20,
-          fontSize: 12,
-          color: 'var(--text-3)',
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <div className="mono" style={{ fontSize: 13, color: 'var(--text)' }}>
+            {fmt.shares(Number(h.quantity))}
+          </div>
+          <div className="label-caps" style={{ fontSize: 9, marginTop: 2 }}>
+            주
+          </div>
+        </div>
+      </button>
+      {open && <AccountBreakdown accounts={h.accounts} pad={40} />}
+    </div>
+  )
+}
+
+function HoldingRow({ h }: { h: ShareHoldingResponse }) {
+  const [open, setOpen] = useState(false)
+  const toggle = () => setOpen((v) => !v)
+  return (
+    <>
+      <tr
+        tabIndex={0}
+        aria-expanded={open}
+        onClick={toggle}
+        onKeyDown={(e) => {
+          // 행 자체가 버튼이 아니어서 Enter·Space를 직접 받는다.
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            toggle()
+          }
         }}
+        style={{ cursor: 'pointer' }}
       >
-        {fmt.dateYmd(h.as_of)}
-      </td>
-    </tr>
+        <td
+          style={{ paddingLeft: 20, borderBottom: open ? 'none' : undefined }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ExpandChevron open={open} />
+            <TickerBadge ticker={h.ticker} />
+            <div>
+              <div
+                className="mono"
+                style={{ fontSize: 12, color: 'var(--text)' }}
+              >
+                {h.ticker}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                {h.name ?? ''}
+              </div>
+            </div>
+          </div>
+        </td>
+        <td
+          className="mono"
+          style={{
+            fontSize: 12,
+            color: 'var(--text-2)',
+            borderBottom: open ? 'none' : undefined,
+          }}
+        >
+          {accountLabel(h)}
+        </td>
+        <td
+          className="mono"
+          style={{
+            textAlign: 'right',
+            fontSize: 13,
+            borderBottom: open ? 'none' : undefined,
+          }}
+        >
+          {fmt.shares(Number(h.quantity))}
+        </td>
+        <td
+          className="mono"
+          style={{
+            textAlign: 'right',
+            paddingRight: 20,
+            fontSize: 12,
+            color: 'var(--text-3)',
+            borderBottom: open ? 'none' : undefined,
+          }}
+        >
+          {fmt.dateYmd(h.as_of)}
+        </td>
+      </tr>
+      {open && (
+        <tr>
+          <td colSpan={4} style={{ padding: 0 }}>
+            <AccountBreakdown accounts={h.accounts} pad={62} />
+          </td>
+        </tr>
+      )}
+    </>
   )
 }
 

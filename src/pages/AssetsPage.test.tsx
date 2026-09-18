@@ -20,6 +20,13 @@ vi.mock('../stores', () => ({
   useUiStore: () => ({ showToast }),
 }))
 
+// 화면 폭에 따라 표(데스크톱)와 카드(모바일) 중 하나만 그려지므로, 두 경로를
+// 각각 확인할 수 있도록 폭 판정을 테스트가 쥐고 있는다.
+const { viewport } = vi.hoisted(() => ({ viewport: { mobile: false } }))
+vi.mock('../hooks/useIsMobile', () => ({
+  useIsMobile: () => viewport.mobile,
+}))
+
 const mockedGet = vi.mocked(apiClient.get)
 const mockedPost = vi.mocked(apiClient.post)
 
@@ -65,6 +72,7 @@ function respond(
 }
 
 afterEach(() => {
+  viewport.mobile = false
   vi.restoreAllMocks()
   vi.clearAllMocks()
 })
@@ -105,6 +113,96 @@ describe('AssetsPage', () => {
     render(<AssetsPage />)
 
     expect(await screen.findByText('2개 계좌')).toBeInTheDocument()
+  })
+
+  it('종목 행을 클릭하면 계좌별 보유 수량을 펼쳐 보여준다', async () => {
+    respond([
+      holding({
+        quantity: '30',
+        accounts: [
+          { bank: 'hantu', number: '12345678-01', quantity: '20' },
+          { bank: 'hantu', number: '87654321-01', quantity: '10' },
+        ],
+      }),
+    ])
+
+    render(<AssetsPage />)
+
+    await screen.findByText('삼성전자')
+    expect(screen.queryByText('12345678-01')).not.toBeInTheDocument()
+
+    await userEvent.click(within(holdingsTable()).getAllByRole('row')[1])
+
+    // 펼친 행 바로 아래에 계좌별 수량이 붙는다. 수량이 많은 계좌가 먼저다.
+    const detail = within(holdingsTable()).getAllByRole('row')[2]
+    const accounts = within(detail).getAllByText(/^\d{8}-\d{2}$/)
+    expect(accounts.map((el) => el.textContent)).toEqual([
+      '12345678-01',
+      '87654321-01',
+    ])
+    expect(within(detail).getByText('20')).toBeInTheDocument()
+    expect(within(detail).getByText('10')).toBeInTheDocument()
+    // 은행 코드가 아니라 사람이 읽는 증권사 이름으로 적는다.
+    expect(within(detail).getAllByText('한국투자증권')).toHaveLength(2)
+  })
+
+  it('펼친 종목 행을 다시 클릭하면 접는다', async () => {
+    respond([holding()])
+
+    render(<AssetsPage />)
+    await screen.findByText('삼성전자')
+
+    const row = () => within(holdingsTable()).getAllByRole('row')[1]
+    await userEvent.click(row())
+    expect(screen.getByText('한국투자증권')).toBeInTheDocument()
+
+    await userEvent.click(row())
+    expect(screen.queryByText('한국투자증권')).not.toBeInTheDocument()
+  })
+
+  it('한 종목을 펼쳐도 다른 종목은 접힌 채로 둔다', async () => {
+    respond([
+      holding({ ticker: '005930', name: '삼성전자', quantity: '30' }),
+      holding({
+        ticker: 'AAPL',
+        name: 'Apple',
+        quantity: '100',
+        accounts: [{ bank: 'hantu', number: '87654321-01', quantity: '100' }],
+      }),
+    ])
+
+    render(<AssetsPage />)
+    await screen.findByText('Apple')
+
+    // 수량 순 정렬이라 AAPL이 첫 행이다.
+    await userEvent.click(within(holdingsTable()).getAllByRole('row')[1])
+
+    expect(within(holdingsTable()).getAllByRole('row')).toHaveLength(4)
+    expect(screen.getAllByText('한국투자증권')).toHaveLength(1)
+  })
+
+  it('모바일 카드도 눌러서 계좌별 보유 수량을 펼친다', async () => {
+    viewport.mobile = true
+    respond([
+      holding({
+        quantity: '30',
+        accounts: [
+          { bank: 'hantu', number: '12345678-01', quantity: '20' },
+          { bank: 'hantu', number: '87654321-01', quantity: '10' },
+        ],
+      }),
+    ])
+
+    render(<AssetsPage />)
+
+    const card = await screen.findByRole('button', { name: /005930/ })
+    expect(card).toHaveAttribute('aria-expanded', 'false')
+
+    await userEvent.click(card)
+
+    expect(card).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('12345678-01')).toBeInTheDocument()
+    expect(screen.getByText('87654321-01')).toBeInTheDocument()
   })
 
   it('기본은 수량이 많은 종목부터 보여주고, 종목명 순으로 바꿀 수 있다', async () => {
