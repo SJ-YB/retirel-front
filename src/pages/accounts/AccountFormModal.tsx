@@ -2,9 +2,16 @@ import { useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { Button, Divider, Form, Input, Modal, Popconfirm, Select } from 'antd'
 
-import type { Account, CreateAccountRequest } from '../../types/account'
-import { apiIdentity } from '../../utils/account'
+import type { Account, Bank, CreateAccountRequest } from '../../types/account'
+import {
+  ACCOUNT_TYPE_LABELS,
+  BANK_LABELS,
+  apiIdentity,
+  isLinkedBank,
+  toApiAccountType,
+} from '../../utils/account'
 import AccountCredentialSection from './AccountCredentialSection'
+import AccountDepositSection from './AccountDepositSection'
 import AccountSyncSection from './AccountSyncSection'
 
 interface AccountFormModalProps {
@@ -15,7 +22,7 @@ interface AccountFormModalProps {
   onDelete?: () => Promise<void>
   loading: boolean
   deleting?: boolean
-  // 등록 모드에서 폼 위에 놓을 계좌 종류 전환 UI(증권 계좌 ↔ 대출).
+  // 등록 모드에서 폼 위에 놓을 계좌 종류 전환 UI(일반 계좌 ↔ 대출).
   kindSwitch?: ReactNode
 }
 
@@ -36,9 +43,10 @@ function AccountFormModal({
     if (open && account) {
       form.setFieldsValue({
         name: account.name,
-        bank: account.bank,
+        bank: apiIdentity(account).bank as Bank,
         accountNumber: account.accountNumber,
         ownerName: account.ownerName,
+        type: toApiAccountType(account.type),
       })
     } else if (open) {
       form.resetFields()
@@ -98,7 +106,11 @@ function AccountFormModal({
       }
     >
       {!isEdit && kindSwitch}
-      <Form form={form} layout="vertical" initialValues={{ bank: 'hantu' }}>
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{ bank: 'hantu', type: 'brokerage' }}
+      >
         <Form.Item
           name="name"
           label="별칭"
@@ -112,9 +124,27 @@ function AccountFormModal({
           label="금융사"
           rules={[{ required: true, message: '금융사를 선택해주세요' }]}
         >
-          <Select disabled={isEdit}>
-            <Select.Option value="hantu">한국투자증권</Select.Option>
-          </Select>
+          <Select
+            disabled={isEdit}
+            options={Object.entries(BANK_LABELS).map(([value, label]) => ({
+              value,
+              label,
+            }))}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="type"
+          label="계좌 유형"
+          rules={[{ required: true, message: '계좌 유형을 선택해주세요' }]}
+        >
+          {/* 유형은 금융사·계좌번호처럼 본질적인 정보라 등록 후 바꾸지 않는다. */}
+          <Select
+            disabled={isEdit}
+            options={Object.entries(ACCOUNT_TYPE_LABELS).map(
+              ([value, label]) => ({ value, label }),
+            )}
+          />
         </Form.Item>
 
         <Form.Item
@@ -134,15 +164,23 @@ function AccountFormModal({
         </Form.Item>
       </Form>
 
-      {/* 자격증명 연동은 계좌가 이미 존재해야 하므로 수정 모드에서만 노출한다. */}
-      {isEdit && account && (
-        <>
-          <Divider />
-          <AccountCredentialSection {...apiIdentity(account)} />
-          <Divider />
-          <AccountSyncSection {...apiIdentity(account)} />
-        </>
-      )}
+      {/* 연동·납입 기록은 계좌가 이미 존재해야 하므로 수정 모드에서만 노출한다.
+          증권사 연동 금융사는 자격증명·동기화를, 그 외는 납입액 수기 입력을 보여준다. */}
+      {isEdit &&
+        account &&
+        (isLinkedBank(apiIdentity(account).bank) ? (
+          <>
+            <Divider />
+            <AccountCredentialSection {...apiIdentity(account)} />
+            <Divider />
+            <AccountSyncSection {...apiIdentity(account)} />
+          </>
+        ) : (
+          <>
+            <Divider />
+            <AccountDepositSection {...apiIdentity(account)} />
+          </>
+        ))}
     </Modal>
   )
 }

@@ -16,7 +16,7 @@ function maturityLabel(days: number): string {
   return `D-${days}`
 }
 
-/** 계좌 목록에 증권 계좌 카드와 나란히 놓이는 대출 카드. 누르면 수정 모달이 열린다. */
+/** 계좌 목록에 일반 계좌 카드와 나란히 놓이는 대출 카드. 누르면 수정 모달이 열린다. */
 function LoanCard({
   loan,
   onClick,

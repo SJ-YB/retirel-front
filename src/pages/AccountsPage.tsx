@@ -354,8 +354,9 @@ function AccountsPage() {
         const payload: CreateAccountApiRequest = {
           number: values.accountNumber ?? '',
           owner_id: values.ownerName,
-          bank: 'hantu',
+          bank: values.bank,
           nickname: values.name,
+          type: values.type ?? 'brokerage',
         }
         await apiClient.post('/v1/accounts', payload)
         showToast({ message: '계좌가 등록되었습니다', type: 'success' })
@@ -500,7 +501,7 @@ function AccountsPage() {
           </div>
         )}
 
-        {/* 대출은 증권 계좌 아래에 따로 묶는다. 잔액 부호가 반대라 섞이면 헷갈린다. */}
+        {/* 대출은 일반 계좌 아래에 따로 묶는다. 잔액 부호가 반대라 섞이면 헷갈린다. */}
         {loans.length > 0 && (
           <>
             <div className="label-caps" style={{ marginTop: 8 }}>

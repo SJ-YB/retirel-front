@@ -48,6 +48,7 @@ function account(
     owner: '남편',
     bank: 'hantu',
     nickname: '주거래 계좌',
+    type: 'brokerage',
     ...overrides,
   }
 }
@@ -150,7 +151,7 @@ afterEach(() => {
 })
 
 describe('AccountsPage', () => {
-  it('증권 계좌와 대출을 함께 표시한다', async () => {
+  it('일반 계좌와 대출을 함께 표시한다', async () => {
     serve({ accounts: [account()], loans: [loan()] })
 
     render(<AccountsPage />)
@@ -193,8 +194,8 @@ describe('AccountsPage', () => {
     expect(within(loanDialog).getByLabelText('원금')).toBeInTheDocument()
     expect(within(loanDialog).getByLabelText('만기일')).toBeInTheDocument()
 
-    // 다시 증권 계좌로 돌아갈 수도 있다.
-    await user.click(within(loanDialog).getByText('증권 계좌'))
+    // 다시 일반 계좌로 돌아갈 수도 있다.
+    await user.click(within(loanDialog).getByText('일반 계좌'))
     const accountDialog = await findDialog('계좌 등록')
     expect(within(accountDialog).getByLabelText('계좌번호')).toBeInTheDocument()
   })

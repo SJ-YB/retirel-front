@@ -12,7 +12,7 @@ interface LoanFormModalProps {
   onDelete?: () => Promise<void>
   loading: boolean
   deleting?: boolean
-  // 등록 모드에서 폼 위에 놓을 계좌 종류 전환 UI(증권 계좌 ↔ 대출).
+  // 등록 모드에서 폼 위에 놓을 계좌 종류 전환 UI(일반 계좌 ↔ 대출).
   kindSwitch?: ReactNode
 }
 
