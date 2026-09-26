@@ -1,8 +1,13 @@
 import { useEffect } from 'react'
 import { Button, Divider, Form, Input, Modal, Popconfirm, Select } from 'antd'
 
-import type { Account, CreateAccountRequest } from '../../types/account'
-import { apiIdentity } from '../../utils/account'
+import type { Account, Bank, CreateAccountRequest } from '../../types/account'
+import {
+  ACCOUNT_TYPE_LABELS,
+  BANK_LABELS,
+  apiIdentity,
+  toApiAccountType,
+} from '../../utils/account'
 import AccountCredentialSection from './AccountCredentialSection'
 import AccountSyncSection from './AccountSyncSection'
 
@@ -32,9 +37,10 @@ function AccountFormModal({
     if (open && account) {
       form.setFieldsValue({
         name: account.name,
-        bank: account.bank,
+        bank: apiIdentity(account).bank as Bank,
         accountNumber: account.accountNumber,
         ownerName: account.ownerName,
+        type: toApiAccountType(account.type),
       })
     } else if (open) {
       form.resetFields()
@@ -93,7 +99,11 @@ function AccountFormModal({
           : undefined
       }
     >
-      <Form form={form} layout="vertical" initialValues={{ bank: 'hantu' }}>
+      <Form
+        form={form}
+        layout="vertical"
+        initialValues={{ bank: 'hantu', type: 'brokerage' }}
+      >
         <Form.Item
           name="name"
           label="별칭"
@@ -107,9 +117,27 @@ function AccountFormModal({
           label="금융사"
           rules={[{ required: true, message: '금융사를 선택해주세요' }]}
         >
-          <Select disabled={isEdit}>
-            <Select.Option value="hantu">한국투자증권</Select.Option>
-          </Select>
+          <Select
+            disabled={isEdit}
+            options={Object.entries(BANK_LABELS).map(([value, label]) => ({
+              value,
+              label,
+            }))}
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="type"
+          label="계좌 유형"
+          rules={[{ required: true, message: '계좌 유형을 선택해주세요' }]}
+        >
+          {/* 유형은 금융사·계좌번호처럼 본질적인 정보라 등록 후 바꾸지 않는다. */}
+          <Select
+            disabled={isEdit}
+            options={Object.entries(ACCOUNT_TYPE_LABELS).map(
+              ([value, label]) => ({ value, label }),
+            )}
+          />
         </Form.Item>
 
         <Form.Item

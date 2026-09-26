@@ -223,8 +223,9 @@ function AccountsPage() {
         const payload: CreateAccountApiRequest = {
           number: values.accountNumber ?? '',
           owner_id: values.ownerName,
-          bank: 'hantu',
+          bank: values.bank,
           nickname: values.name,
+          type: values.type ?? 'brokerage',
         }
         await apiClient.post('/v1/accounts', payload)
         showToast({ message: '계좌가 등록되었습니다', type: 'success' })
