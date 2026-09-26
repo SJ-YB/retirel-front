@@ -6,9 +6,11 @@ import {
   ACCOUNT_TYPE_LABELS,
   BANK_LABELS,
   apiIdentity,
+  isLinkedBank,
   toApiAccountType,
 } from '../../utils/account'
 import AccountCredentialSection from './AccountCredentialSection'
+import AccountDepositSection from './AccountDepositSection'
 import AccountSyncSection from './AccountSyncSection'
 
 interface AccountFormModalProps {
@@ -157,15 +159,23 @@ function AccountFormModal({
         </Form.Item>
       </Form>
 
-      {/* 자격증명 연동은 계좌가 이미 존재해야 하므로 수정 모드에서만 노출한다. */}
-      {isEdit && account && (
-        <>
-          <Divider />
-          <AccountCredentialSection {...apiIdentity(account)} />
-          <Divider />
-          <AccountSyncSection {...apiIdentity(account)} />
-        </>
-      )}
+      {/* 연동·납입 기록은 계좌가 이미 존재해야 하므로 수정 모드에서만 노출한다.
+          증권사 연동 금융사는 자격증명·동기화를, 그 외는 납입액 수기 입력을 보여준다. */}
+      {isEdit &&
+        account &&
+        (isLinkedBank(apiIdentity(account).bank) ? (
+          <>
+            <Divider />
+            <AccountCredentialSection {...apiIdentity(account)} />
+            <Divider />
+            <AccountSyncSection {...apiIdentity(account)} />
+          </>
+        ) : (
+          <>
+            <Divider />
+            <AccountDepositSection {...apiIdentity(account)} />
+          </>
+        ))}
     </Modal>
   )
 }
