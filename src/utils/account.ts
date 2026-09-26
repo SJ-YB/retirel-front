@@ -12,6 +12,14 @@ export const BANK_LABELS: Record<Bank, string> = {
   woori: '우리은행',
 }
 
+// 증권사 Open API로 거래내역을 연동하는 금융사. 그 외 금융사(우리은행 등)는
+// 연동 대신 납입액을 수기로 입력한다.
+const LINKED_BANKS: ReadonlySet<string> = new Set<Bank>(['hantu'])
+
+export function isLinkedBank(bank: string): boolean {
+  return LINKED_BANKS.has(bank)
+}
+
 // 백엔드 계좌 유형 코드 → 화면 표기. 새 유형이 생기면 여기에만 추가한다.
 export const ACCOUNT_TYPE_LABELS: Record<AccountApiType, AccountType> = {
   brokerage: '위탁',

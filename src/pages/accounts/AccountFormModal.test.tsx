@@ -5,12 +5,20 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import AccountFormModal from './AccountFormModal'
 import { fromApiAccount } from '../../utils/account'
 
-// 수정 모드에서만 마운트되는 자격증명·동기화 섹션은 이 테스트의 관심사가 아니다.
+// 수정 모드에서만 마운트되는 섹션들은 각자의 테스트가 있으므로, 여기서는
+// 어떤 섹션이 보이는지만 확인할 수 있도록 표식만 렌더링한다.
 vi.mock('./AccountCredentialSection', () => ({
-  default: () => null,
+  default: () => <div>credential-section</div>,
 }))
 vi.mock('./AccountSyncSection', () => ({
-  default: () => null,
+  default: () => <div>sync-section</div>,
+}))
+vi.mock('./AccountDepositSection', () => ({
+  default: ({ bank, number }: { bank: string; number: string }) => (
+    <div>
+      deposit-section:{bank}:{number}
+    </div>
+  ),
 }))
 
 afterEach(() => {
@@ -128,5 +136,53 @@ describe('AccountFormModal', () => {
     expect(screen.getByLabelText('계좌 유형')).toBeDisabled()
     expect(screen.getByText('우리은행')).toBeInTheDocument()
     expect(screen.getByLabelText('금융사')).toBeDisabled()
+  })
+
+  it('한국투자증권 계좌는 연동 섹션을 보여주고 납입 섹션은 숨긴다', () => {
+    const account = fromApiAccount({
+      number: '123-456',
+      owner: '남편',
+      bank: 'hantu',
+      nickname: '메인',
+      type: 'brokerage',
+    })
+    render(
+      <AccountFormModal
+        open
+        account={account}
+        onClose={() => {}}
+        onSubmit={vi.fn()}
+        loading={false}
+      />,
+    )
+
+    expect(screen.getByText('credential-section')).toBeInTheDocument()
+    expect(screen.getByText('sync-section')).toBeInTheDocument()
+    expect(screen.queryByText(/deposit-section/)).not.toBeInTheDocument()
+  })
+
+  it('우리은행 계좌는 연동 섹션 대신 납입 섹션을 보여준다', () => {
+    const account = fromApiAccount({
+      number: '1002-123-456789',
+      owner: '아내',
+      bank: 'woori',
+      nickname: '청약',
+      type: 'housing_subscription',
+    })
+    render(
+      <AccountFormModal
+        open
+        account={account}
+        onClose={() => {}}
+        onSubmit={vi.fn()}
+        loading={false}
+      />,
+    )
+
+    expect(
+      screen.getByText('deposit-section:woori:1002-123-456789'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('credential-section')).not.toBeInTheDocument()
+    expect(screen.queryByText('sync-section')).not.toBeInTheDocument()
   })
 })

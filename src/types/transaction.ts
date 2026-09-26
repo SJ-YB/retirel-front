@@ -64,6 +64,14 @@ export interface TransactionApiResponse {
   quantity: string | null
   fee: MoneyApiResponse | null
   tax: MoneyApiResponse | null
+  // 사용자가 직접 입력한 거래인지. 수기 거래만 개별 삭제할 수 있다.
+  manual: boolean
+}
+
+// 백엔드(POST /api/v1/accounts/{bank}/{number}/deposits) 요청 본문.
+export interface ManualDepositApiRequest {
+  deposited_on: string // YYYY-MM-DD
+  amount: string // 원화 금액(10진 문자열)
 }
 
 // 거래내역 동기화 상태. idle: 이력 없음, running: 진행 중,
