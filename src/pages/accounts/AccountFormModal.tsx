@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { Button, Divider, Form, Input, Modal, Popconfirm, Select } from 'antd'
 
 import type { Account, CreateAccountRequest } from '../../types/account'
@@ -14,6 +15,8 @@ interface AccountFormModalProps {
   onDelete?: () => Promise<void>
   loading: boolean
   deleting?: boolean
+  // 등록 모드에서 폼 위에 놓을 계좌 종류 전환 UI(증권 계좌 ↔ 대출).
+  kindSwitch?: ReactNode
 }
 
 function AccountFormModal({
@@ -24,6 +27,7 @@ function AccountFormModal({
   onDelete,
   loading,
   deleting = false,
+  kindSwitch,
 }: AccountFormModalProps) {
   const [form] = Form.useForm<CreateAccountRequest>()
   const isEdit = !!account
@@ -93,6 +97,7 @@ function AccountFormModal({
           : undefined
       }
     >
+      {!isEdit && kindSwitch}
       <Form form={form} layout="vertical" initialValues={{ bank: 'hantu' }}>
         <Form.Item
           name="name"

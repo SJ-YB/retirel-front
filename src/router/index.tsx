@@ -12,7 +12,6 @@ const TransactionsPage = lazy(() => import('../pages/TransactionsPage.tsx'))
 const AssetsPage = lazy(() => import('../pages/AssetsPage.tsx'))
 const WatchlistPage = lazy(() => import('../pages/WatchlistPage.tsx'))
 const PricesPage = lazy(() => import('../pages/PricesPage.tsx'))
-const LoansPage = lazy(() => import('../pages/LoansPage.tsx'))
 const LoginPage = lazy(() => import('../pages/LoginPage.tsx'))
 
 const router = createBrowserRouter([
@@ -68,14 +67,6 @@ const router = createBrowserRouter([
             element: (
               <Suspense fallback={<PageFallback />}>
                 <PricesPage />
-              </Suspense>
-            ),
-          },
-          {
-            path: 'loans',
-            element: (
-              <Suspense fallback={<PageFallback />}>
-                <LoansPage />
               </Suspense>
             ),
           },

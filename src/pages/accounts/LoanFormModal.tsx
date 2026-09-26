@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import type { ReactNode } from 'react'
 import { Button, Form, Input, InputNumber, Modal, Popconfirm } from 'antd'
 
 import type { LoanFormValues, LoanResponse } from '../../types/loan'
@@ -11,10 +12,12 @@ interface LoanFormModalProps {
   onDelete?: () => Promise<void>
   loading: boolean
   deleting?: boolean
+  // 등록 모드에서 폼 위에 놓을 계좌 종류 전환 UI(증권 계좌 ↔ 대출).
+  kindSwitch?: ReactNode
 }
 
 /**
- * 대출 등록·수정 모달.
+ * 대출 등록·수정 모달. 계좌 등록 화면에서 종류를 '대출'로 고르면 열린다.
  *
  * 값 검증(원금 양수, 금리·잔액 0 이상)은 백엔드가 최종 판단하지만, 같은 규칙을
  * 폼에도 걸어 명백한 오입력은 요청 전에 막는다.
@@ -27,6 +30,7 @@ function LoanFormModal({
   onDelete,
   loading,
   deleting = false,
+  kindSwitch,
 }: LoanFormModalProps) {
   const [form] = Form.useForm<LoanFormValues>()
   const isEdit = !!loan
@@ -98,6 +102,7 @@ function LoanFormModal({
           : undefined
       }
     >
+      {!isEdit && kindSwitch}
       <Form form={form} layout="vertical">
         <Form.Item
           name="alias"
