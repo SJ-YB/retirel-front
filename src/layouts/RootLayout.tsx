@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { key: '/assets', label: 'Assets', icon: 'assets' },
   { key: '/watchlist', label: 'Watchlist', icon: 'dividend', mobileLabel: 'Watch' },
   { key: '/prices', label: 'Prices', icon: 'spark-up', mobileLabel: 'Price' },
+  { key: '/loans', label: 'Loans', icon: 'interest', mobileLabel: 'Loan' },
 ]
 
 function Sidebar() {
