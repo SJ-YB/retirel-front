@@ -10,14 +10,43 @@ import type {
   CreateAccountRequest,
   UpdateAccountApiRequest,
 } from '../types/account'
+import type { LoanFormValues, LoanRequest, LoanResponse } from '../types/loan'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { fmt, toKrw } from '../utils/format'
 import { apiIdentity, fromApiAccount } from '../utils/account'
 import PageHeader from '../components/ui/PageHeader'
 import Icon from '../components/ui/Icon'
 import AccountFormModal from './accounts/AccountFormModal'
+import AccountKindSwitch from './accounts/AccountKindSwitch'
+import type { AccountKind } from './accounts/AccountKindSwitch'
+import LoanCard from './accounts/LoanCard'
+import LoanFormModal from './accounts/LoanFormModal'
 
-function SumItem({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
+// 열려 있는 모달. 대출도 계좌이므로 같은 '계좌 등록' 진입점에서 종류를 골라 등록한다.
+type ModalState =
+  | { kind: 'brokerage'; account: Account | null }
+  | { kind: 'loan'; loan: LoanResponse | null }
+
+function toLoanRequest(values: LoanFormValues): LoanRequest {
+  return {
+    alias: values.alias.trim(),
+    account: values.account.trim(),
+    principal: String(values.principal),
+    interest_rate: String(values.interest_rate),
+    balance: String(values.balance),
+    maturity_date: values.maturity_date,
+  }
+}
+
+function SumItem({
+  label,
+  value,
+  accent,
+}: {
+  label: string
+  value: string | number
+  accent?: boolean
+}) {
   return (
     <div>
       <div className="label-caps" style={{ marginBottom: 6 }}>
@@ -25,7 +54,10 @@ function SumItem({ label, value, accent }: { label: string; value: string | numb
       </div>
       <div
         className="serif num"
-        style={{ fontSize: 20, color: accent ? 'var(--accent)' : 'var(--text)' }}
+        style={{
+          fontSize: 20,
+          color: accent ? 'var(--accent)' : 'var(--text)',
+        }}
       >
         {value}
       </div>
@@ -94,8 +126,13 @@ function AccountCard({
             padding: '3px 8px',
             borderRadius: 4,
             background:
-              account.currency === 'KRW' ? 'var(--accent-dim)' : 'rgba(110,231,168,0.14)',
-            color: account.currency === 'KRW' ? 'var(--accent-hi)' : 'var(--emerald)',
+              account.currency === 'KRW'
+                ? 'var(--accent-dim)'
+                : 'rgba(110,231,168,0.14)',
+            color:
+              account.currency === 'KRW'
+                ? 'var(--accent-hi)'
+                : 'var(--emerald)',
           }}
         >
           {account.currency}
@@ -118,7 +155,8 @@ function AccountCard({
       <div className="mono" style={{ fontSize: 11, color: 'var(--text-3)' }}>
         {account.positions != null && account.positions > 0 ? (
           <>
-            {account.positions} positions · <span className="pos">+{account.ytd}% YTD</span>
+            {account.positions} positions ·{' '}
+            <span className="pos">+{account.ytd}% YTD</span>
           </>
         ) : (
           <>현금 · 이자 {account.ytd ?? 0}%</>
@@ -126,7 +164,13 @@ function AccountCard({
       </div>
 
       <div className="hr" style={{ margin: '16px 0 12px' }} />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, 1fr)',
+          gap: 8,
+        }}
+      >
         <div>
           <div className="label-caps" style={{ fontSize: 9 }}>
             주식
@@ -139,7 +183,10 @@ function AccountCard({
           <div className="label-caps" style={{ fontSize: 9 }}>
             현금
           </div>
-          <div className="mono" style={{ fontSize: 13, color: 'var(--text-2)' }}>
+          <div
+            className="mono"
+            style={{ fontSize: 13, color: 'var(--text-2)' }}
+          >
             {account.cashPct ?? 0}%
           </div>
         </div>
@@ -147,7 +194,10 @@ function AccountCard({
           <div className="label-caps" style={{ fontSize: 9 }}>
             거래
           </div>
-          <div className="mono" style={{ fontSize: 13, color: 'var(--text-2)' }}>
+          <div
+            className="mono"
+            style={{ fontSize: 13, color: 'var(--text-2)' }}
+          >
             {account.txCount ?? 0}
           </div>
         </div>
@@ -159,9 +209,9 @@ function AccountCard({
 function AccountsPage() {
   const isMobile = useIsMobile()
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [loans, setLoans] = useState<LoanResponse[]>([])
   const [loading, setLoading] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editingAccount, setEditingAccount] = useState<Account | null>(null)
+  const [modal, setModal] = useState<ModalState | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const { showToast } = useUiStore()
@@ -178,9 +228,19 @@ function AccountsPage() {
     }
   }, [showToast])
 
+  const fetchLoans = useCallback(async () => {
+    try {
+      const { data } = await apiClient.get<LoanResponse[]>('/v1/loans')
+      setLoans(Array.isArray(data) ? data : [])
+    } catch {
+      showToast({ message: '대출 목록을 불러오지 못했습니다', type: 'error' })
+    }
+  }, [showToast])
+
   useEffect(() => {
     fetchAccounts()
-  }, [fetchAccounts])
+    fetchLoans()
+  }, [fetchAccounts, fetchLoans])
 
   const totals = useMemo(() => {
     const totalKrw = accounts.reduce(
@@ -190,22 +250,93 @@ function AccountsPage() {
     const krwCount = accounts.filter((a) => a.currency === 'KRW').length
     const usdCount = accounts.filter((a) => a.currency === 'USD').length
     const owners = new Set(accounts.map((a) => a.owner))
-    return { totalKrw, krwCount, usdCount, ownerCount: owners.size }
-  }, [accounts])
+    const loanBalance = loans.reduce((sum, l) => sum + Number(l.balance), 0)
+    return {
+      totalKrw,
+      krwCount,
+      usdCount,
+      ownerCount: owners.size,
+      loanBalance,
+    }
+  }, [accounts, loans])
+
+  const editingAccount = modal?.kind === 'brokerage' ? modal.account : null
+  const editingLoan = modal?.kind === 'loan' ? modal.loan : null
 
   const handleCreate = () => {
-    setEditingAccount(null)
-    setModalOpen(true)
+    setModal({ kind: 'brokerage', account: null })
+  }
+
+  // 등록 모드에서 종류를 바꾸면 같은 자리에 다른 폼이 열린다.
+  const handleKindChange = (kind: AccountKind) => {
+    setModal(
+      kind === 'loan'
+        ? { kind: 'loan', loan: null }
+        : { kind: 'brokerage', account: null },
+    )
   }
 
   const handleEdit = (account: Account) => {
-    setEditingAccount(account)
-    setModalOpen(true)
+    setModal({ kind: 'brokerage', account })
+  }
+
+  const handleEditLoan = (loan: LoanResponse) => {
+    setModal({ kind: 'loan', loan })
   }
 
   const handleClose = () => {
-    setModalOpen(false)
-    setEditingAccount(null)
+    setModal(null)
+  }
+
+  const kindSwitch = modal ? (
+    <AccountKindSwitch value={modal.kind} onChange={handleKindChange} />
+  ) : null
+
+  const handleSubmitLoan = async (values: LoanFormValues) => {
+    setSubmitting(true)
+    try {
+      const payload = toLoanRequest(values)
+      if (editingLoan) {
+        await apiClient.put(
+          `/v1/loans/${encodeURIComponent(editingLoan.id)}`,
+          payload,
+        )
+        showToast({ message: '대출이 수정되었습니다', type: 'success' })
+      } else {
+        await apiClient.post('/v1/loans', payload)
+        showToast({ message: '대출이 등록되었습니다', type: 'success' })
+      }
+      handleClose()
+      await fetchLoans()
+    } catch (err) {
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined
+      showToast({
+        message:
+          status === 400
+            ? '입력값이 올바르지 않습니다'
+            : status === 404
+              ? '이미 삭제된 대출입니다'
+              : '요청 처리에 실패했습니다',
+        type: 'error',
+      })
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDeleteLoan = async () => {
+    if (!editingLoan) return
+    setDeleting(true)
+    try {
+      await apiClient.delete(`/v1/loans/${encodeURIComponent(editingLoan.id)}`)
+      showToast({ message: '대출이 삭제되었습니다', type: 'success' })
+      handleClose()
+      await fetchLoans()
+    } catch {
+      showToast({ message: '대출 삭제에 실패했습니다', type: 'error' })
+    } finally {
+      setDeleting(false)
+    }
   }
 
   const handleSubmit = async (values: CreateAccountRequest) => {
@@ -236,7 +367,9 @@ function AccountsPage() {
       const status = axios.isAxiosError(err) ? err.response?.status : undefined
       showToast({
         message:
-          status === 409 ? '이미 등록된 계좌입니다' : '요청 처리에 실패했습니다',
+          status === 409
+            ? '이미 등록된 계좌입니다'
+            : '요청 처리에 실패했습니다',
         type: 'error',
       })
     } finally {
@@ -266,14 +399,18 @@ function AccountsPage() {
     <>
       <PageHeader
         title="Accounts"
-        meta={`${accounts.length} accounts · ${totals.ownerCount} owners`}
+        meta={`${accounts.length} accounts · ${loans.length} loans · ${totals.ownerCount} owners`}
         right={
           !isMobile ? (
             <>
               <button className="btn" type="button">
                 <Icon name="export" size={14} /> Export
               </button>
-              <button className="btn primary" type="button" onClick={handleCreate}>
+              <button
+                className="btn primary"
+                type="button"
+                onClick={handleCreate}
+              >
                 <Icon name="plus" size={14} /> New Account
               </button>
             </>
@@ -319,10 +456,17 @@ function AccountsPage() {
             flexWrap: 'wrap',
           }}
         >
-          <SumItem label="TOTAL ASSETS" value={fmt.krwShort(totals.totalKrw)} accent />
+          <SumItem
+            label="TOTAL ASSETS"
+            value={fmt.krwShort(totals.totalKrw)}
+            accent
+          />
           <SumItem label="KRW ACCOUNTS" value={totals.krwCount} />
           <SumItem label="USD ACCOUNTS" value={totals.usdCount} />
-          <SumItem label="LAST ACTIVITY" value="2h ago" />
+          <SumItem
+            label="LOANS"
+            value={`-${fmt.krwShort(totals.loanBalance)}`}
+          />
         </div>
 
         {loading && accounts.length === 0 ? (
@@ -348,20 +492,60 @@ function AccountsPage() {
             }}
           >
             {accounts.map((acc) => (
-              <AccountCard key={acc.id} account={acc} onClick={() => handleEdit(acc)} />
+              <AccountCard
+                key={acc.id}
+                account={acc}
+                onClick={() => handleEdit(acc)}
+              />
             ))}
           </div>
+        )}
+
+        {/* 대출은 일반 계좌 아래에 따로 묶는다. 잔액 부호가 반대라 섞이면 헷갈린다. */}
+        {loans.length > 0 && (
+          <>
+            <div className="label-caps" style={{ marginTop: 8 }}>
+              LOANS
+            </div>
+            <div
+              className="grid"
+              style={{
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+                gap: 16,
+              }}
+            >
+              {loans.map((loan) => (
+                <LoanCard
+                  key={loan.id}
+                  loan={loan}
+                  onClick={() => handleEditLoan(loan)}
+                />
+              ))}
+            </div>
+          </>
         )}
       </div>
 
       <AccountFormModal
-        open={modalOpen}
+        open={modal?.kind === 'brokerage'}
         account={editingAccount}
         onClose={handleClose}
         onSubmit={handleSubmit}
         onDelete={handleDelete}
         loading={submitting}
         deleting={deleting}
+        kindSwitch={kindSwitch}
+      />
+
+      <LoanFormModal
+        open={modal?.kind === 'loan'}
+        loan={editingLoan}
+        onClose={handleClose}
+        onSubmit={handleSubmitLoan}
+        onDelete={editingLoan ? handleDeleteLoan : undefined}
+        loading={submitting}
+        deleting={deleting}
+        kindSwitch={kindSwitch}
       />
     </>
   )
