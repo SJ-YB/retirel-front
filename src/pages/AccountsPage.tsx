@@ -223,7 +223,7 @@ function AccountsPage() {
         const payload: CreateAccountApiRequest = {
           number: values.accountNumber ?? '',
           owner_id: values.ownerName,
-          bank: 'hantu',
+          bank: values.bank,
           nickname: values.name,
           type: values.type ?? 'brokerage',
         }

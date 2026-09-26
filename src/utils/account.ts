@@ -9,6 +9,7 @@ import type {
 
 export const BANK_LABELS: Record<Bank, string> = {
   hantu: '한국투자증권',
+  woori: '우리은행',
 }
 
 // 백엔드 계좌 유형 코드 → 화면 표기. 새 유형이 생기면 여기에만 추가한다.
@@ -54,7 +55,10 @@ export function fromApiAccount(api: AccountApiResponse): Account {
 
 // id는 `${bank}-${number}` 형식이고 number에 하이픈이 포함될 수 있으므로,
 // 끝에서 accountNumber 길이만큼 잘라 bank 코드를 복원한다.
-export function apiIdentity(account: Account): { bank: string; number: string } {
+export function apiIdentity(account: Account): {
+  bank: string
+  number: string
+} {
   const number = account.accountNumber
   const bank = account.id.slice(0, account.id.length - number.length - 1)
   return { bank, number }

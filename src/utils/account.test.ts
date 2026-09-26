@@ -34,6 +34,10 @@ describe('fromApiAccount', () => {
     expect(fromApiAccount(api).type).toBe('위탁')
   })
 
+  it('우리은행 계좌의 금융사를 표기한다', () => {
+    expect(fromApiAccount(apiAccount({ bank: 'woori' })).bank).toBe('우리은행')
+  })
+
   it('하이픈이 든 계좌번호로도 bank/number를 복원한다', () => {
     const account = fromApiAccount(apiAccount({ number: '12-34-56' }))
     expect(apiIdentity(account)).toEqual({ bank: 'hantu', number: '12-34-56' })

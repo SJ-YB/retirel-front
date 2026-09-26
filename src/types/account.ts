@@ -31,7 +31,7 @@ export interface Account {
 
 export interface CreateAccountRequest {
   name: string
-  bank: string
+  bank: Bank
   accountNumber?: string
   currency?: Currency
   ownerName: string
@@ -40,7 +40,8 @@ export interface CreateAccountRequest {
 }
 
 // 백엔드(POST /api/v1/accounts)가 기대하는 계좌 생성 요청 본문.
-export type Bank = 'hantu'
+// 백엔드의 은행 코드. hantu: 한국투자증권, woori: 우리은행.
+export type Bank = 'hantu' | 'woori'
 
 // 백엔드의 계좌 유형 코드. brokerage: 증권, housing_subscription: 주택청약.
 export type AccountApiType = 'brokerage' | 'housing_subscription'

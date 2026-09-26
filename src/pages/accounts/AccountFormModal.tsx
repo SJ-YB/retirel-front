@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { Button, Divider, Form, Input, Modal, Popconfirm, Select } from 'antd'
 
-import type { Account, CreateAccountRequest } from '../../types/account'
+import type { Account, Bank, CreateAccountRequest } from '../../types/account'
 import {
   ACCOUNT_TYPE_LABELS,
+  BANK_LABELS,
   apiIdentity,
   toApiAccountType,
 } from '../../utils/account'
@@ -36,7 +37,7 @@ function AccountFormModal({
     if (open && account) {
       form.setFieldsValue({
         name: account.name,
-        bank: account.bank,
+        bank: apiIdentity(account).bank as Bank,
         accountNumber: account.accountNumber,
         ownerName: account.ownerName,
         type: toApiAccountType(account.type),
@@ -116,9 +117,13 @@ function AccountFormModal({
           label="금융사"
           rules={[{ required: true, message: '금융사를 선택해주세요' }]}
         >
-          <Select disabled={isEdit}>
-            <Select.Option value="hantu">한국투자증권</Select.Option>
-          </Select>
+          <Select
+            disabled={isEdit}
+            options={Object.entries(BANK_LABELS).map(([value, label]) => ({
+              value,
+              label,
+            }))}
+          />
         </Form.Item>
 
         <Form.Item
