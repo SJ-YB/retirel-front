@@ -225,6 +225,7 @@ function AccountsPage() {
           owner_id: values.ownerName,
           bank: 'hantu',
           nickname: values.name,
+          type: values.type ?? 'brokerage',
         }
         await apiClient.post('/v1/accounts', payload)
         showToast({ message: '계좌가 등록되었습니다', type: 'success' })

@@ -7,6 +7,7 @@ export type AccountType =
   | '입출금'
   | '정기예금'
   | '해외주식'
+  | '주택청약'
 
 export type AccountOwner = '남편' | '아내' | '공동'
 
@@ -34,18 +35,22 @@ export interface CreateAccountRequest {
   accountNumber?: string
   currency?: Currency
   ownerName: string
-  type?: AccountType
+  type?: AccountApiType
   owner?: AccountOwner
 }
 
 // 백엔드(POST /api/v1/accounts)가 기대하는 계좌 생성 요청 본문.
 export type Bank = 'hantu'
 
+// 백엔드의 계좌 유형 코드. brokerage: 증권, housing_subscription: 주택청약.
+export type AccountApiType = 'brokerage' | 'housing_subscription'
+
 export interface CreateAccountApiRequest {
   number: string
   owner_id: string
   bank: Bank
   nickname?: string
+  type?: AccountApiType
 }
 
 // 백엔드(PATCH /api/v1/accounts/{bank}/{number})가 기대하는 계좌 수정 요청 본문.
@@ -59,6 +64,7 @@ export interface AccountApiResponse {
   owner: string
   bank: Bank
   nickname: string | null
+  type: AccountApiType
 }
 
 export interface UpdateAccountRequest {
