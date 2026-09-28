@@ -4,19 +4,21 @@ import { Button } from 'antd'
 import { apiClient } from '../api'
 import { useUiStore } from '../stores'
 import type { PaginatedResponse } from '../types/api'
-import type { Debt, Deposit } from '../types/asset'
+import type { Deposit } from '../types/asset'
 import type {
   AccountShareCountResponse,
   AggregateResultResponse,
   ShareHoldingResponse,
 } from '../types/holding'
+import type { LoanResponse } from '../types/loan'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { fmt } from '../utils/format'
 import { BANK_LABELS } from '../utils/account'
 import PageHeader from '../components/ui/PageHeader'
 import Icon from '../components/ui/Icon'
 import type { IconName } from '../components/ui/Icon'
-import { mockDebts, mockDeposits } from '../mocks/data'
+import { mockDeposits } from '../mocks/data'
+import LoanSection from './assets/LoanSection'
 import ShareAdjustmentSection from './assets/ShareAdjustmentSection'
 
 type Tab = 'holdings' | 'debts' | 'deposits'
@@ -337,91 +339,6 @@ function HoldingRow({ h }: { h: ShareHoldingResponse }) {
   )
 }
 
-function DebtCard({ d }: { d: Debt }) {
-  const remaining = d.amount * (1 - d.progressPct / 100)
-  return (
-    <div
-      className="card"
-      style={{ position: 'relative', padding: 18, overflow: 'hidden' }}
-    >
-      <div className="stripe" style={{ background: 'var(--rose)' }} />
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-        }}
-      >
-        <div>
-          <div className="label-caps" style={{ marginBottom: 6 }}>
-            대출 상품 · {d.bank}
-          </div>
-          <div className="serif" style={{ fontSize: 20 }}>
-            {d.name}
-          </div>
-        </div>
-        <div
-          style={{
-            fontSize: 10,
-            fontFamily: 'var(--mono)',
-            letterSpacing: '0.08em',
-            padding: '3px 8px',
-            borderRadius: 4,
-            background: 'rgba(243,139,168,0.14)',
-            color: 'var(--rose)',
-          }}
-        >
-          {d.currency}
-        </div>
-      </div>
-      <div
-        className="serif num neg"
-        style={{ fontSize: 28, margin: '14px 0 4px', letterSpacing: '-0.01em' }}
-      >
-        − {d.amount.toLocaleString()}원
-      </div>
-      <div className="mono" style={{ fontSize: 11, color: 'var(--text-3)' }}>
-        상환 진행률 {d.progressPct}% · {(remaining / 1e6).toFixed(0)}M /{' '}
-        {(d.amount / 1e6).toFixed(0)}M
-      </div>
-
-      <div
-        style={{
-          height: 4,
-          background: 'rgba(255,255,255,0.06)',
-          borderRadius: 2,
-          margin: '12px 0 16px',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            width: d.progressPct + '%',
-            height: '100%',
-            background: 'var(--rose)',
-            opacity: 0.85,
-          }}
-        />
-      </div>
-
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 8,
-        }}
-      >
-        <MiniStat label="금리" value={`${d.rate}% ${d.rateType}`} />
-        <MiniStat
-          label="월 상환"
-          value={`${(d.monthlyPayment / 1e6).toFixed(2)}M`}
-        />
-        <MiniStat label="만기" value={d.maturity} />
-      </div>
-    </div>
-  )
-}
-
 function DepositCard({ d }: { d: Deposit }) {
   return (
     <div
@@ -481,8 +398,8 @@ function DepositCard({ d }: { d: Deposit }) {
  * 자산 화면.
  *
  * 보유 종목 탭은 백엔드가 거래내역을 누적해 집계해 둔 종목별 주식 수를 읽는다
- * (화면이 거래내역을 직접 훑지 않는다). 부채·임대 보증금은 아직 백엔드가 없어
- * mock으로 채운다.
+ * (화면이 거래내역을 직접 훑지 않는다). 부채 탭은 사용자가 직접 입력한 대출을
+ * 등록·수정·삭제한다. 임대 보증금은 아직 백엔드가 없어 mock으로 채운다.
  */
 function AssetsPage() {
   const isMobile = useIsMobile()
@@ -493,7 +410,8 @@ function AssetsPage() {
   const [holdings, setHoldings] = useState<ShareHoldingResponse[]>([])
   const [loadingHoldings, setLoadingHoldings] = useState(true)
   const [aggregating, setAggregating] = useState(false)
-  const [debts, setDebts] = useState<Debt[]>(mockDebts)
+  const [loans, setLoans] = useState<LoanResponse[]>([])
+  const [loadingLoans, setLoadingLoans] = useState(true)
   const [deposits, setDeposits] = useState<Deposit[]>(mockDeposits)
 
   const fetchHoldings = useCallback(async () => {
@@ -509,19 +427,32 @@ function AssetsPage() {
     }
   }, [showToast])
 
+  const fetchLoans = useCallback(async () => {
+    setLoadingLoans(true)
+    try {
+      const { data } = await apiClient.get<LoanResponse[]>('/v1/loans')
+      setLoans(Array.isArray(data) ? data : [])
+    } catch {
+      showToast({ message: '대출 목록을 불러오지 못했습니다', type: 'error' })
+    } finally {
+      setLoadingLoans(false)
+    }
+  }, [showToast])
+
   useEffect(() => {
     fetchHoldings()
   }, [fetchHoldings])
 
   useEffect(() => {
+    fetchLoans()
+  }, [fetchLoans])
+
+  useEffect(() => {
     const load = async () => {
       try {
-        const [d, dp] = await Promise.all([
-          apiClient.get<PaginatedResponse<Debt>>('/assets/debts'),
-          apiClient.get<PaginatedResponse<Deposit>>('/assets/deposits'),
-        ])
-        if (Array.isArray(d.data?.data)) setDebts(d.data.data)
-        if (Array.isArray(dp.data?.data)) setDeposits(dp.data.data)
+        const { data } =
+          await apiClient.get<PaginatedResponse<Deposit>>('/assets/deposits')
+        if (Array.isArray(data?.data)) setDeposits(data.data)
       } catch {
         // fall back to mocks already set
       }
@@ -584,7 +515,7 @@ function AssetsPage() {
       count: holdings.length,
       icon: 'spark-up',
     },
-    { k: 'debts', label: '부채', count: debts.length, icon: 'fee' },
+    { k: 'debts', label: '부채', count: loans.length, icon: 'fee' },
     {
       k: 'deposits',
       label: '임대 보증금',
@@ -597,7 +528,7 @@ function AssetsPage() {
     <>
       <PageHeader
         title="Assets"
-        meta={`${holdings.length} holdings · ${debts.length} debts · ${deposits.length} deposits`}
+        meta={`${holdings.length} holdings · ${loans.length} loans · ${deposits.length} deposits`}
         right={
           <Button loading={aggregating} onClick={handleAggregate}>
             <Icon name="refresh" size={14} /> 집계
@@ -774,19 +705,11 @@ function AssetsPage() {
         )}
 
         {tab === 'debts' && (
-          <div
-            className="grid"
-            style={{
-              gridTemplateColumns: isMobile
-                ? '1fr'
-                : 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: 16,
-            }}
-          >
-            {debts.map((d) => (
-              <DebtCard key={d.id} d={d} />
-            ))}
-          </div>
+          <LoanSection
+            loans={loans}
+            loading={loadingLoans}
+            onChanged={fetchLoans}
+          />
         )}
 
         {tab === 'deposits' && (

@@ -43,7 +43,6 @@ function holding(
   }
 }
 
-/** 보유 종목만 응답하고 나머지(부채·보증금)는 실패시켜 mock으로 떨어뜨린다. */
 /** 요약 카드 한 장. 라벨은 표 제목 등과 겹칠 수 있어 라벨 스타일로 좁힌다. */
 function summaryCard(label: string): HTMLElement {
   return screen
@@ -59,6 +58,7 @@ function holdingsTable(): HTMLElement {
   return document.querySelector('table.tbl') as HTMLElement
 }
 
+/** 보유 종목만 응답하고 임대 보증금은 실패시켜 mock으로 떨어뜨린다. */
 function respond(
   holdings: ShareHoldingResponse[],
   adjustments: ShareAdjustmentResponse[] = [],
@@ -67,6 +67,8 @@ function respond(
     if (url === '/v1/holdings') return Promise.resolve({ data: holdings })
     if (url === '/v1/holdings/adjustments')
       return Promise.resolve({ data: adjustments })
+    // 대출은 부채 탭(LoanSection.test)에서 따로 검증한다.
+    if (url === '/v1/loans') return Promise.resolve({ data: [] })
     return Promise.reject(new Error('not implemented'))
   })
 }

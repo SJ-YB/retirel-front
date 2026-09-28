@@ -13,19 +13,6 @@ export interface Holding {
   returnPct: number
 }
 
-export interface Debt {
-  id: string
-  name: string
-  bank: string
-  currency: Currency
-  amount: number
-  rate: number
-  rateType: '고정' | '변동'
-  monthlyPayment: number
-  maturity: string
-  progressPct: number
-}
-
 export interface Deposit {
   id: string
   property: string

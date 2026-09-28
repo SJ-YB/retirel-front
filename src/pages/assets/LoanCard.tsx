@@ -16,7 +16,7 @@ function maturityLabel(days: number): string {
   return `D-${days}`
 }
 
-/** 계좌 목록에 일반 계좌 카드와 나란히 놓이는 대출 카드. 누르면 수정 모달이 열린다. */
+/** 자산 화면 부채 탭의 대출 카드. 누르면 수정 모달이 열린다. */
 function LoanCard({
   loan,
   onClick,
@@ -25,11 +25,6 @@ function LoanCard({
   onClick: () => void
 }) {
   const principal = Number(loan.principal)
-  const balance = Number(loan.balance)
-  const repaidPct =
-    principal > 0
-      ? Math.max(0, Math.min(100, (1 - balance / principal) * 100))
-      : 0
   const days = daysToMaturity(loan.maturity_date)
   const overdue = days < 0
 
@@ -64,7 +59,7 @@ function LoanCard({
       >
         <div style={{ minWidth: 0 }}>
           <div className="label-caps" style={{ marginBottom: 6 }}>
-            {loan.account} · 대출
+            대출
           </div>
           <div className="serif" style={{ fontSize: 20, marginBottom: 4 }}>
             {loan.alias}
@@ -97,10 +92,10 @@ function LoanCard({
           textOverflow: 'ellipsis',
         }}
       >
-        -{fmt.won(balance)}
+        -{fmt.won(principal)}
       </div>
       <div className="mono" style={{ fontSize: 11, color: 'var(--text-3)' }}>
-        원금 {fmt.won(principal)} · 상환 {repaidPct.toFixed(0)}%
+        대출금액
       </div>
 
       <div className="hr" style={{ margin: '16px 0 12px' }} />
