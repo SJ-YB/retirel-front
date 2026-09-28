@@ -4,7 +4,6 @@ import type { UpdateAccountRequest } from '../types/account'
 import {
   mockAccounts,
   mockHoldings,
-  mockDeposits,
   mockAssetsSummary,
   mockDashboardSummary,
   mockAllocation,
@@ -101,19 +100,6 @@ export const handlers = [
         page: 1,
         size: 20,
         totalElements: mockHoldings.length,
-        totalPages: 1,
-      },
-    }),
-  ),
-  http.get(`${API_BASE}/assets/deposits`, () =>
-    HttpResponse.json({
-      success: true,
-      message: 'OK',
-      data: mockDeposits,
-      meta: {
-        page: 1,
-        size: 20,
-        totalElements: mockDeposits.length,
         totalPages: 1,
       },
     }),

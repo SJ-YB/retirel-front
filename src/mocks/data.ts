@@ -7,7 +7,7 @@ import type {
   AllocationSlice,
   IncomeHistoryPoint,
 } from '../types/dashboard'
-import type { Holding, Deposit, AssetsSummary } from '../types/asset'
+import type { Holding, AssetsSummary } from '../types/asset'
 import type { Transaction } from '../types/transaction'
 
 // ── 계좌 ────────────────────────────────────────────────
@@ -385,30 +385,6 @@ export const mockHoldings: Holding[] = [
     currency: 'KRW',
     trend24: trendDown,
     returnPct: -12.3,
-  },
-]
-
-// ── 임대 보증금 ─────────────────────────────────────────
-export const mockDeposits: Deposit[] = [
-  {
-    id: 'dp1',
-    property: '투자 부동산 A',
-    address: '서울시',
-    currency: 'KRW',
-    amount: 120_000_000,
-    note: '중수 가능 · 계약 갱신 예정',
-    contractType: '전세',
-    maturity: '2027.08',
-  },
-  {
-    id: 'dp2',
-    property: '투자 부동산 B',
-    address: '부천시',
-    currency: 'KRW',
-    amount: 60_000_000,
-    note: '월세 120만원 · 연 1440만원',
-    contractType: '반전세',
-    maturity: '2026.11',
   },
 ]
 
