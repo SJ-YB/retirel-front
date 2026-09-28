@@ -7,7 +7,7 @@ import type {
   AllocationSlice,
   IncomeHistoryPoint,
 } from '../types/dashboard'
-import type { Holding, Debt, Deposit, AssetsSummary } from '../types/asset'
+import type { Holding, Deposit, AssetsSummary } from '../types/asset'
 import type { Transaction } from '../types/transaction'
 
 // ── 계좌 ────────────────────────────────────────────────
@@ -385,46 +385,6 @@ export const mockHoldings: Holding[] = [
     currency: 'KRW',
     trend24: trendDown,
     returnPct: -12.3,
-  },
-]
-
-// ── 부채 ────────────────────────────────────────────────
-export const mockDebts: Debt[] = [
-  {
-    id: 'd1',
-    name: '주택담보대출',
-    bank: 'KB국민은행',
-    currency: 'KRW',
-    amount: 180_000_000,
-    rate: 3.42,
-    rateType: '고정',
-    monthlyPayment: 1_920_000,
-    maturity: '2034.08',
-    progressPct: 55,
-  },
-  {
-    id: 'd2',
-    name: '직장인 마이너스통장',
-    bank: '신한은행',
-    currency: 'KRW',
-    amount: 48_000_000,
-    rate: 5.23,
-    rateType: '변동',
-    monthlyPayment: 800_000,
-    maturity: '2026.12',
-    progressPct: 15,
-  },
-  {
-    id: 'd3',
-    name: '차량 할부금',
-    bank: '현대캐피탈',
-    currency: 'KRW',
-    amount: 12_000_000,
-    rate: 4.8,
-    rateType: '고정',
-    monthlyPayment: 520_000,
-    maturity: '24개월',
-    progressPct: 62,
   },
 ]
 
