@@ -58,7 +58,7 @@ function holdingsTable(): HTMLElement {
   return document.querySelector('table.tbl') as HTMLElement
 }
 
-/** 보유 종목만 응답하고 임대 보증금은 실패시켜 mock으로 떨어뜨린다. */
+/** 보유 종목만 응답하고 대출·임대 보증금은 빈 목록으로 둔다. */
 function respond(
   holdings: ShareHoldingResponse[],
   adjustments: ShareAdjustmentResponse[] = [],
@@ -69,6 +69,7 @@ function respond(
       return Promise.resolve({ data: adjustments })
     // 대출은 부채 탭(LoanSection.test)에서 따로 검증한다.
     if (url === '/v1/loans') return Promise.resolve({ data: [] })
+    if (url === '/v1/rental-deposits') return Promise.resolve({ data: [] })
     return Promise.reject(new Error('not implemented'))
   })
 }

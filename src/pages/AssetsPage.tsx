@@ -3,22 +3,21 @@ import { Button } from 'antd'
 
 import { apiClient } from '../api'
 import { useUiStore } from '../stores'
-import type { PaginatedResponse } from '../types/api'
-import type { Deposit } from '../types/asset'
 import type {
   AccountShareCountResponse,
   AggregateResultResponse,
   ShareHoldingResponse,
 } from '../types/holding'
 import type { LoanResponse } from '../types/loan'
+import type { RentalDepositResponse } from '../types/rentalDeposit'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { fmt } from '../utils/format'
 import { BANK_LABELS } from '../utils/account'
 import PageHeader from '../components/ui/PageHeader'
 import Icon from '../components/ui/Icon'
 import type { IconName } from '../components/ui/Icon'
-import { mockDeposits } from '../mocks/data'
 import LoanSection from './assets/LoanSection'
+import RentalDepositSection from './assets/RentalDepositSection'
 import ShareAdjustmentSection from './assets/ShareAdjustmentSection'
 
 type Tab = 'holdings' | 'debts' | 'deposits'
@@ -51,22 +50,6 @@ function SummaryCard({
         style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 6 }}
       >
         {sub}
-      </div>
-    </div>
-  )
-}
-
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <div className="label-caps" style={{ fontSize: 9 }}>
-        {label}
-      </div>
-      <div
-        className="mono"
-        style={{ fontSize: 12, color: 'var(--text-2)', marginTop: 2 }}
-      >
-        {value}
       </div>
     </div>
   )
@@ -339,67 +322,12 @@ function HoldingRow({ h }: { h: ShareHoldingResponse }) {
   )
 }
 
-function DepositCard({ d }: { d: Deposit }) {
-  return (
-    <div
-      className="card"
-      style={{ position: 'relative', padding: 18, overflow: 'hidden' }}
-    >
-      <div className="stripe" style={{ background: 'var(--sky)' }} />
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-        }}
-      >
-        <div>
-          <div className="label-caps" style={{ marginBottom: 6 }}>
-            임대 · 선납 보증금
-          </div>
-          <div className="serif" style={{ fontSize: 20 }}>
-            {d.property}
-          </div>
-        </div>
-        <div
-          style={{
-            fontSize: 10,
-            fontFamily: 'var(--mono)',
-            letterSpacing: '0.08em',
-            padding: '3px 8px',
-            borderRadius: 4,
-            background: 'var(--accent-dim)',
-            color: 'var(--accent-hi)',
-          }}
-        >
-          {d.currency}
-        </div>
-      </div>
-      <div
-        className="serif num pos"
-        style={{ fontSize: 28, margin: '14px 0 4px', letterSpacing: '-0.01em' }}
-      >
-        + {d.amount.toLocaleString()}원
-      </div>
-      <div className="mono" style={{ fontSize: 11, color: 'var(--text-3)' }}>
-        {d.address} · {d.note}
-      </div>
-
-      <div className="hr" style={{ margin: '16px 0 12px' }} />
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-        <MiniStat label="계약" value={d.contractType} />
-        <MiniStat label="만기" value={d.maturity} />
-      </div>
-    </div>
-  )
-}
-
 /**
  * 자산 화면.
  *
  * 보유 종목 탭은 백엔드가 거래내역을 누적해 집계해 둔 종목별 주식 수를 읽는다
  * (화면이 거래내역을 직접 훑지 않는다). 부채 탭은 사용자가 직접 입력한 대출을
- * 등록·수정·삭제한다. 임대 보증금은 아직 백엔드가 없어 mock으로 채운다.
+ * 등록·수정·삭제하고, 임대 보증금 탭도 같은 방식으로 직접 입력한 보증금을 다룬다.
  */
 function AssetsPage() {
   const isMobile = useIsMobile()
@@ -412,7 +340,8 @@ function AssetsPage() {
   const [aggregating, setAggregating] = useState(false)
   const [loans, setLoans] = useState<LoanResponse[]>([])
   const [loadingLoans, setLoadingLoans] = useState(true)
-  const [deposits, setDeposits] = useState<Deposit[]>(mockDeposits)
+  const [deposits, setDeposits] = useState<RentalDepositResponse[]>([])
+  const [loadingDeposits, setLoadingDeposits] = useState(true)
 
   const fetchHoldings = useCallback(async () => {
     setLoadingHoldings(true)
@@ -439,6 +368,23 @@ function AssetsPage() {
     }
   }, [showToast])
 
+  const fetchDeposits = useCallback(async () => {
+    setLoadingDeposits(true)
+    try {
+      const { data } = await apiClient.get<RentalDepositResponse[]>(
+        '/v1/rental-deposits',
+      )
+      setDeposits(Array.isArray(data) ? data : [])
+    } catch {
+      showToast({
+        message: '임대 보증금 목록을 불러오지 못했습니다',
+        type: 'error',
+      })
+    } finally {
+      setLoadingDeposits(false)
+    }
+  }, [showToast])
+
   useEffect(() => {
     fetchHoldings()
   }, [fetchHoldings])
@@ -448,17 +394,8 @@ function AssetsPage() {
   }, [fetchLoans])
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const { data } =
-          await apiClient.get<PaginatedResponse<Deposit>>('/assets/deposits')
-        if (Array.isArray(data?.data)) setDeposits(data.data)
-      } catch {
-        // fall back to mocks already set
-      }
-    }
-    load()
-  }, [])
+    fetchDeposits()
+  }, [fetchDeposits])
 
   // 집계는 로컬 DB만 다시 읽는 짧은 작업이라 응답을 기다렸다가 표를 새로 읽는다
   // (증권사 API를 호출하는 연동/종가 수집과 달리 폴링이 필요 없다).
@@ -713,19 +650,11 @@ function AssetsPage() {
         )}
 
         {tab === 'deposits' && (
-          <div
-            className="grid"
-            style={{
-              gridTemplateColumns: isMobile
-                ? '1fr'
-                : 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: 16,
-            }}
-          >
-            {deposits.map((d) => (
-              <DepositCard key={d.id} d={d} />
-            ))}
-          </div>
+          <RentalDepositSection
+            deposits={deposits}
+            loading={loadingDeposits}
+            onChanged={fetchDeposits}
+          />
         )}
       </div>
     </>

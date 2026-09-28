@@ -13,17 +13,6 @@ export interface Holding {
   returnPct: number
 }
 
-export interface Deposit {
-  id: string
-  property: string
-  address: string
-  currency: Currency
-  amount: number
-  note: string
-  contractType: '전세' | '반전세' | '월세'
-  maturity: string
-}
-
 export interface AssetsSummary {
   holdingsValue: number
   debtsValue: number

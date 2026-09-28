@@ -51,11 +51,12 @@ function loan(overrides: Partial<LoanResponse> = {}): LoanResponse {
 }
 
 // 대출 목록만 돌려준다. 다시 불러올 때마다 최신 배열을 본다.
-// 보유 종목은 빈 목록, 임대 보증금은 실패시켜 mock으로 떨어뜨린다.
+// 보유 종목·임대 보증금은 빈 목록.
 function serve(state: { loans: LoanResponse[] }) {
   mockedGet.mockImplementation(async (url: string) => {
     if (url === '/v1/loans') return { data: state.loans }
     if (url === '/v1/holdings') return { data: [] }
+    if (url === '/v1/rental-deposits') return { data: [] }
     throw new Error(`unexpected GET ${url}`)
   })
 }
@@ -289,6 +290,7 @@ describe('부채 탭', () => {
     const user = userEvent.setup()
     mockedGet.mockImplementation(async (url: string) => {
       if (url === '/v1/holdings') return { data: [] }
+      if (url === '/v1/rental-deposits') return { data: [] }
       throw new Error('boom')
     })
 

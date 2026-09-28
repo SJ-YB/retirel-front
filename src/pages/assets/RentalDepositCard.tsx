@@ -1,17 +1,17 @@
-import type { LoanResponse } from '../../types/loan'
+import type { RentalDepositResponse } from '../../types/rentalDeposit'
 import { fmt } from '../../utils/format'
 import { daysToMaturity, maturityLabel } from '../../utils/maturity'
 
-/** 자산 화면 부채 탭의 대출 카드. 누르면 수정 모달이 열린다. */
-function LoanCard({
-  loan,
+/** 자산 화면 임대 보증금 탭의 보증금 카드. 누르면 수정 모달이 열린다. */
+function RentalDepositCard({
+  deposit,
   onClick,
 }: {
-  loan: LoanResponse
+  deposit: RentalDepositResponse
   onClick: () => void
 }) {
-  const principal = Number(loan.principal)
-  const days = daysToMaturity(loan.maturity_date)
+  const amount = Number(deposit.amount)
+  const days = daysToMaturity(deposit.maturity_date)
   const overdue = days < 0
 
   return (
@@ -19,7 +19,7 @@ function LoanCard({
       className="card"
       role="button"
       tabIndex={0}
-      aria-label={`${loan.alias} 수정`}
+      aria-label={`${deposit.alias} 수정`}
       onClick={onClick}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -34,41 +34,16 @@ function LoanCard({
         transition: 'all 0.15s ease',
       }}
     >
-      <div className="stripe" style={{ background: 'var(--rose)' }} />
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start',
-          gap: 8,
-        }}
-      >
-        <div style={{ minWidth: 0 }}>
-          <div className="label-caps" style={{ marginBottom: 6 }}>
-            대출
-          </div>
-          <div className="serif" style={{ fontSize: 20, marginBottom: 4 }}>
-            {loan.alias}
-          </div>
-        </div>
-        <div
-          className="mono"
-          style={{
-            fontSize: 10,
-            letterSpacing: '0.08em',
-            padding: '3px 8px',
-            borderRadius: 4,
-            background: 'rgba(243,139,168,0.14)',
-            color: 'var(--rose)',
-            flexShrink: 0,
-          }}
-        >
-          연 {loan.interest_rate}%
-        </div>
+      <div className="stripe" style={{ background: 'var(--sky)' }} />
+      <div className="label-caps" style={{ marginBottom: 6 }}>
+        임대 보증금
+      </div>
+      <div className="serif" style={{ fontSize: 20, marginBottom: 4 }}>
+        {deposit.alias}
       </div>
 
       <div
-        className="serif num"
+        className="serif num pos"
         style={{
           fontSize: 22,
           margin: '14px 0 4px',
@@ -78,10 +53,10 @@ function LoanCard({
           textOverflow: 'ellipsis',
         }}
       >
-        -{fmt.won(principal)}
+        +{fmt.won(amount)}
       </div>
       <div className="mono" style={{ fontSize: 11, color: 'var(--text-3)' }}>
-        대출금액
+        보증금
       </div>
 
       <div className="hr" style={{ margin: '16px 0 12px' }} />
@@ -97,7 +72,7 @@ function LoanCard({
             만기일
           </div>
           <div className="mono" style={{ fontSize: 13, color: 'var(--text)' }}>
-            {fmt.dateYmd(loan.maturity_date)}
+            {fmt.dateYmd(deposit.maturity_date)}
           </div>
         </div>
         <div>
@@ -119,4 +94,4 @@ function LoanCard({
   )
 }
 
-export default LoanCard
+export default RentalDepositCard
