@@ -40,6 +40,10 @@ export interface Transaction {
   direction?: 'PAY' | 'REFUND'
   kind?: TransactionKind
   sign?: TransactionSign
+  // 배당의 세전 금액. amount는 세금을 뺀 실수령액이다.
+  grossAmount?: number
+  // 실수령 내역이 아니라 배당 일정과 보유 수량으로 추정한 거래인지.
+  estimated?: boolean
 }
 
 export interface MoneyApiResponse {
@@ -66,6 +70,8 @@ export interface TransactionApiResponse {
   tax: MoneyApiResponse | null
   // 사용자가 직접 입력한 거래인지. 수기 거래만 개별 삭제할 수 있다.
   manual: boolean
+  // 실수령 내역이 아니라 추정한 거래인지(해외주식 배당). 구버전 서버는 주지 않는다.
+  estimated?: boolean
 }
 
 // 백엔드(POST /api/v1/accounts/{bank}/{number}/deposits) 요청 본문.
