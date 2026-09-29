@@ -21,19 +21,26 @@ import type { IconName } from '../components/ui/Icon'
 // 백엔드(GET /v1/transactions) 응답을 화면용 Transaction으로 변환한다.
 // 금액·수량은 Decimal이 문자열로 직렬화되므로 Number()로 파싱한다.
 function fromApiTransaction(api: TransactionApiResponse): Transaction {
+  const type = api.type.toUpperCase() as TransactionType
+  const amount = Number(api.amount.amount)
+  const tax = api.tax != null ? Number(api.tax.amount) : 0
+  // 배당은 백엔드가 세전 금액과 원천징수 세금을 나눠 준다. 계좌에 실제로 들어온
+  // 돈과 맞도록 화면 금액은 세후로 보인다.
+  const isDividend = type === 'DIVIDEND'
   return {
     id: api.id,
     accountId: `${api.account.bank}-${api.account.number}`,
     date: api.traded_at,
-    type: api.type.toUpperCase() as TransactionType,
+    type,
     ticker: api.ticker ?? '',
     name: api.name ?? '',
     quantity: api.quantity != null ? Number(api.quantity) : 0,
-    amount: Number(api.amount.amount),
+    amount: isDividend ? amount - tax : amount,
     fee: api.fee != null ? Number(api.fee.amount) : 0,
-    tax: api.tax != null ? Number(api.tax.amount) : 0,
+    tax,
     memo: '',
     currency: api.amount.currency.toUpperCase(),
+    estimated: api.estimated ?? false,
   }
 }
 
@@ -173,6 +180,21 @@ function TxRow({
           }}
         >
           {title}
+          {t.estimated && (
+            <span
+              title="증권사가 실수령 내역을 주지 않아 배당 일정과 보유 수량으로 추정한 금액입니다"
+              style={{
+                marginLeft: 6,
+                padding: '1px 6px',
+                borderRadius: 4,
+                border: '1px solid var(--border)',
+                fontSize: 10,
+                color: 'var(--text-3)',
+              }}
+            >
+              추정
+            </span>
+          )}
         </div>
         <div
           className="mono"
