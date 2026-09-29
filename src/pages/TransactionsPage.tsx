@@ -25,7 +25,7 @@ function fromApiTransaction(api: TransactionApiResponse): Transaction {
   const amount = Number(api.amount.amount)
   const tax = api.tax != null ? Number(api.tax.amount) : 0
   // 배당은 백엔드가 세전 금액과 원천징수 세금을 나눠 준다. 계좌에 실제로 들어온
-  // 돈과 맞도록 화면 금액은 세후로 보이고, 세전 금액은 따로 들고 있는다.
+  // 돈과 맞도록 화면 금액은 세후로 보인다.
   const isDividend = type === 'DIVIDEND'
   return {
     id: api.id,
@@ -40,7 +40,6 @@ function fromApiTransaction(api: TransactionApiResponse): Transaction {
     tax,
     memo: '',
     currency: api.amount.currency.toUpperCase(),
-    grossAmount: isDividend ? amount : undefined,
     estimated: api.estimated ?? false,
   }
 }
@@ -135,11 +134,6 @@ function TxRow({
   const subParts: string[] = []
   if (account) subParts.push(account.name)
   if (t.memo) subParts.push(t.memo)
-  if (t.grossAmount != null && t.tax > 0) {
-    subParts.push(
-      `세전 ${fmt.money(t.grossAmount, ccy)} · 세금 ${fmt.money(t.tax, ccy)}`,
-    )
-  }
   const quantityLabel = t.quantity > 0 ? `${t.quantity} 주` : null
 
   return (

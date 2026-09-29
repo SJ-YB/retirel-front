@@ -40,8 +40,6 @@ export interface Transaction {
   direction?: 'PAY' | 'REFUND'
   kind?: TransactionKind
   sign?: TransactionSign
-  // 배당의 세전 금액. amount는 세금을 뺀 실수령액이다.
-  grossAmount?: number
   // 실수령 내역이 아니라 배당 일정과 보유 수량으로 추정한 거래인지.
   estimated?: boolean
 }
