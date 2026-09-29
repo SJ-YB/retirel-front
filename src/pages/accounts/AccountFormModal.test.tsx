@@ -14,9 +14,18 @@ vi.mock('./AccountSyncSection', () => ({
   default: () => <div>sync-section</div>,
 }))
 vi.mock('./AccountDepositSection', () => ({
-  default: ({ bank, number }: { bank: string; number: string }) => (
+  default: ({
+    bank,
+    number,
+    linked,
+  }: {
+    bank: string
+    number: string
+    linked?: boolean
+  }) => (
     <div>
       deposit-section:{bank}:{number}
+      {linked ? ':linked' : ''}
     </div>
   ),
 }))
@@ -138,7 +147,7 @@ describe('AccountFormModal', () => {
     expect(screen.getByLabelText('금융사')).toBeDisabled()
   })
 
-  it('한국투자증권 계좌는 연동 섹션을 보여주고 납입 섹션은 숨긴다', () => {
+  it('한국투자증권 계좌는 연동 섹션과 타행 이체 입금 섹션을 보여준다', () => {
     const account = fromApiAccount({
       number: '123-456',
       owner: '남편',
@@ -158,7 +167,9 @@ describe('AccountFormModal', () => {
 
     expect(screen.getByText('credential-section')).toBeInTheDocument()
     expect(screen.getByText('sync-section')).toBeInTheDocument()
-    expect(screen.queryByText(/deposit-section/)).not.toBeInTheDocument()
+    expect(
+      screen.getByText('deposit-section:hantu:123-456:linked'),
+    ).toBeInTheDocument()
   })
 
   it('우리은행 계좌는 연동 섹션 대신 납입 섹션을 보여준다', () => {

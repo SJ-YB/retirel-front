@@ -146,4 +146,27 @@ describe('AccountDepositSection', () => {
       screen.queryByRole('button', { name: '삭제' }),
     ).not.toBeInTheDocument()
   })
+
+  it('연동 계좌는 타행 이체 입금으로 안내하고 입금을 추가한다', async () => {
+    const user = userEvent.setup()
+    mockedGet.mockResolvedValue({ data: [] })
+    mockedPost.mockResolvedValue({ data: {} })
+
+    render(<AccountDepositSection bank="hantu" number="123-456" linked />)
+    await screen.findByText('아직 입력한 입금 내역이 없습니다')
+    expect(screen.getByText('타행 이체 입금')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('입금일'), {
+      target: { value: '2026-09-28' },
+    })
+    await user.type(screen.getByLabelText('입금 금액'), '3000000')
+    await user.click(screen.getByRole('button', { name: '입금 추가' }))
+
+    await waitFor(() =>
+      expect(mockedPost).toHaveBeenCalledWith(
+        '/v1/accounts/hantu/123-456/deposits',
+        { deposited_on: '2026-09-28', amount: '3000000' },
+      ),
+    )
+  })
 })

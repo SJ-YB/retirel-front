@@ -159,8 +159,9 @@ function AccountFormModal({
         </Form.Item>
       </Form>
 
-      {/* 연동·납입 기록은 계좌가 이미 존재해야 하므로 수정 모드에서만 노출한다.
-          증권사 연동 금융사는 자격증명·동기화를, 그 외는 납입액 수기 입력을 보여준다. */}
+      {/* 연동·입금 기록은 계좌가 이미 존재해야 하므로 수정 모드에서만 노출한다.
+          증권사 연동 금융사는 자격증명·동기화와 타행 이체 입금 입력을, 그 외는
+          납입액 수기 입력을 보여준다. */}
       {isEdit &&
         account &&
         (isLinkedBank(apiIdentity(account).bank) ? (
@@ -169,6 +170,8 @@ function AccountFormModal({
             <AccountCredentialSection {...apiIdentity(account)} />
             <Divider />
             <AccountSyncSection {...apiIdentity(account)} />
+            <Divider />
+            <AccountDepositSection {...apiIdentity(account)} linked />
           </>
         ) : (
           <>
