@@ -8,7 +8,11 @@ interface AllocationDonutProps {
   total?: string
 }
 
-function AllocationDonut({ data, size = 180, total = '₩1.85B' }: AllocationDonutProps) {
+function AllocationDonut({
+  data,
+  size = 180,
+  total = '₩1.85B',
+}: AllocationDonutProps) {
   const [hover, setHover] = useState<number | null>(null)
 
   const innerRadius = size / 2 - 25

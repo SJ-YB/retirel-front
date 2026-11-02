@@ -44,13 +44,14 @@ function fromApiTransaction(api: TransactionApiResponse): Transaction {
   }
 }
 
-const FILTERS: { k: 'all' | TransactionKind; label: string; color: string }[] = [
-  { k: 'all', label: '전체', color: 'var(--text-3)' },
-  { k: '매수', label: '매수', color: 'var(--sky)' },
-  { k: '매도', label: '매도', color: 'var(--rose)' },
-  { k: '배당금', label: '배당', color: 'var(--emerald)' },
-  { k: '외부입금', label: '외부입금', color: 'var(--violet)' },
-]
+const FILTERS: { k: 'all' | TransactionKind; label: string; color: string }[] =
+  [
+    { k: 'all', label: '전체', color: 'var(--text-3)' },
+    { k: '매수', label: '매수', color: 'var(--sky)' },
+    { k: '매도', label: '매도', color: 'var(--rose)' },
+    { k: '배당금', label: '배당', color: 'var(--emerald)' },
+    { k: '외부입금', label: '외부입금', color: 'var(--violet)' },
+  ]
 
 const KIND_COLORS: Record<TransactionKind, string> = {
   매수: 'var(--sky)',
@@ -126,7 +127,7 @@ function TxRow({
   // 종목코드 대신 종목이름으로 표기한다.
   // 백엔드가 내려준 이름을 우선 쓰고, 없으면 보유 종목 매핑, 최후에는 코드를 보여준다.
   const securityName = t.ticker
-    ? (t.name || nameMap.get(t.ticker) || t.ticker)
+    ? t.name || nameMap.get(t.ticker) || t.ticker
     : ''
   const title = securityName
     ? `${securityName}${t.memo ? ` — ${t.memo.split(' · ')[0]}` : ''}`
@@ -346,7 +347,14 @@ function TransactionsPage() {
           padding: isMobile ? '0 18px 100px' : '0 28px 32px',
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, minWidth: 0 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 14,
+            minWidth: 0,
+          }}
+        >
           {/* Search + filters */}
           <div
             style={{
@@ -356,7 +364,9 @@ function TransactionsPage() {
               flexWrap: 'wrap',
             }}
           >
-            <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 200 }}>
+            <div
+              style={{ position: 'relative', flex: '1 1 220px', minWidth: 200 }}
+            >
               <div
                 style={{
                   position: 'absolute',
@@ -387,7 +397,8 @@ function TransactionsPage() {
                   onClick={() => setFilter(f.k)}
                   className={'chip' + (filter === f.k ? ' active' : '')}
                 >
-                  <span className="dot" style={{ background: f.color }} /> {f.label}
+                  <span className="dot" style={{ background: f.color }} />{' '}
+                  {f.label}
                   {f.k === 'all' && (
                     <span className="mono muted" style={{ marginLeft: 2 }}>
                       {transactions.length}
@@ -401,17 +412,31 @@ function TransactionsPage() {
           {/* Grouped list */}
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             {loading ? (
-              <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>
+              <div
+                style={{
+                  padding: 40,
+                  textAlign: 'center',
+                  color: 'var(--text-3)',
+                }}
+              >
                 <div className="label-caps">Loading transactions…</div>
               </div>
             ) : groups.length === 0 ? (
-              <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>
+              <div
+                style={{
+                  padding: 40,
+                  textAlign: 'center',
+                  color: 'var(--text-3)',
+                }}
+              >
                 <div className="label-caps">No matching transactions</div>
               </div>
             ) : (
               groups.map(([date, items]) => {
                 const dayTotal = items.reduce((sum, t) => {
-                  const ccy = (t.currency ?? accountMap.get(t.accountId)?.currency ?? 'KRW') as 'KRW' | 'USD'
+                  const ccy = (t.currency ??
+                    accountMap.get(t.accountId)?.currency ??
+                    'KRW') as 'KRW' | 'USD'
                   const krwAmount = toKrw(t.amount, ccy)
                   return sum + (resolveSign(t) === '+' ? krwAmount : -krwAmount)
                 }, 0)
@@ -429,23 +454,40 @@ function TransactionsPage() {
                         gap: isMobile ? 2 : 0,
                       }}
                     >
-                      <div className="serif mono" style={{ fontSize: isMobile ? 13 : 14, color: 'var(--text-2)' }}>
+                      <div
+                        className="serif mono"
+                        style={{
+                          fontSize: isMobile ? 13 : 14,
+                          color: 'var(--text-2)',
+                        }}
+                      >
                         {fmt.dateYmd(date)}
                       </div>
-                      <div className="mono" style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                      <div
+                        className="mono"
+                        style={{ fontSize: 11, color: 'var(--text-3)' }}
+                      >
                         {items.length} transaction{items.length > 1 ? 's' : ''}
                         <span
                           style={{
                             marginLeft: 8,
-                            color: dayTotal >= 0 ? 'var(--pos)' : 'var(--text-2)',
+                            color:
+                              dayTotal >= 0 ? 'var(--pos)' : 'var(--text-2)',
                           }}
                         >
-                          {dayTotal >= 0 ? '+' : '−'} {fmt.krwShort(Math.abs(dayTotal))}
+                          {dayTotal >= 0 ? '+' : '−'}{' '}
+                          {fmt.krwShort(Math.abs(dayTotal))}
                         </span>
                       </div>
                     </div>
                     {items.map((t) => (
-                      <TxRow key={t.id} t={t} accountMap={accountMap} nameMap={nameMap} isMobile={isMobile} />
+                      <TxRow
+                        key={t.id}
+                        t={t}
+                        accountMap={accountMap}
+                        nameMap={nameMap}
+                        isMobile={isMobile}
+                      />
                     ))}
                   </div>
                 )

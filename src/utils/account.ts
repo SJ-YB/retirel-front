@@ -24,6 +24,7 @@ export function isLinkedBank(bank: string): boolean {
 export const ACCOUNT_TYPE_LABELS: Record<AccountApiType, AccountType> = {
   brokerage: '위탁',
   housing_subscription: '주택청약',
+  irp: '퇴직연금(IRP)',
 }
 
 const DEFAULT_ACCOUNT_TYPE: AccountApiType = 'brokerage'

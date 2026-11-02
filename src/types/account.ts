@@ -8,6 +8,7 @@ export type AccountType =
   | '정기예금'
   | '해외주식'
   | '주택청약'
+  | '퇴직연금(IRP)'
 
 export type AccountOwner = '남편' | '아내' | '공동'
 
@@ -43,8 +44,9 @@ export interface CreateAccountRequest {
 // 백엔드의 은행 코드. hantu: 한국투자증권, woori: 우리은행.
 export type Bank = 'hantu' | 'woori'
 
-// 백엔드의 계좌 유형 코드. brokerage: 증권, housing_subscription: 주택청약.
-export type AccountApiType = 'brokerage' | 'housing_subscription'
+// 백엔드의 계좌 유형 코드. brokerage: 증권, housing_subscription: 주택청약,
+// irp: 개인형 퇴직연금.
+export type AccountApiType = 'brokerage' | 'housing_subscription' | 'irp'
 
 export interface CreateAccountApiRequest {
   number: string
@@ -57,6 +59,7 @@ export interface CreateAccountApiRequest {
 // 백엔드(PATCH /api/v1/accounts/{bank}/{number})가 기대하는 계좌 수정 요청 본문.
 export interface UpdateAccountApiRequest {
   nickname: string | null
+  type?: AccountApiType
 }
 
 // 백엔드(GET /api/v1/accounts)가 반환하는 계좌 응답 본문.
