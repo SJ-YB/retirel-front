@@ -5,13 +5,7 @@ const { Content } = Layout
 
 function AuthLayout() {
   return (
-    <Layout
-      style={{
-        minHeight: '100svh',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}
-    >
+    <Layout style={{ minHeight: '100svh', justifyContent: 'center', alignItems: 'center' }}>
       <Content style={{ width: 400, maxWidth: '100%', padding: 32 }}>
         <Outlet />
       </Content>

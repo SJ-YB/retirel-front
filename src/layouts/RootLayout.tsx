@@ -13,19 +13,9 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { key: '/', label: 'Dashboard', icon: 'dashboard', mobileLabel: 'Home' },
   { key: '/accounts', label: 'Accounts', icon: 'accounts' },
-  {
-    key: '/transactions',
-    label: 'Transactions',
-    icon: 'transactions',
-    mobileLabel: 'Txns',
-  },
+  { key: '/transactions', label: 'Transactions', icon: 'transactions', mobileLabel: 'Txns' },
   { key: '/assets', label: 'Assets', icon: 'assets' },
-  {
-    key: '/watchlist',
-    label: 'Watchlist',
-    icon: 'dividend',
-    mobileLabel: 'Watch',
-  },
+  { key: '/watchlist', label: 'Watchlist', icon: 'dividend', mobileLabel: 'Watch' },
   { key: '/prices', label: 'Prices', icon: 'spark-up', mobileLabel: 'Price' },
 ]
 
@@ -61,10 +51,7 @@ function Sidebar() {
         <div className="wordmark" style={{ fontSize: 30 }}>
           Retirel
         </div>
-        <div
-          className="label-caps"
-          style={{ color: 'var(--text-muted)', fontSize: 9 }}
-        >
+        <div className="label-caps" style={{ color: 'var(--text-muted)', fontSize: 9 }}>
           V.1
         </div>
       </div>
@@ -123,13 +110,8 @@ function Sidebar() {
           R
         </div>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 12, color: 'var(--text)' }}>
-            Retirel Couple
-          </div>
-          <div
-            className="mono"
-            style={{ fontSize: 10, color: 'var(--text-3)' }}
-          >
+          <div style={{ fontSize: 12, color: 'var(--text)' }}>Retirel Couple</div>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--text-3)' }}>
             우리 부부 · 2 members
           </div>
         </div>
@@ -156,11 +138,7 @@ function MobileHeader() {
       <div className="wordmark" style={{ fontSize: 22 }}>
         Retirel
       </div>
-      <button
-        className="btn"
-        style={{ padding: 8, borderRadius: 8 }}
-        type="button"
-      >
+      <button className="btn" style={{ padding: 8, borderRadius: 8 }} type="button">
         <Icon name="refresh" size={14} />
       </button>
     </div>
@@ -230,14 +208,7 @@ function RootLayout() {
       }}
     >
       {!isMobile && <Sidebar />}
-      <main
-        style={{
-          flex: 1,
-          minWidth: 0,
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
+      <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
         {isMobile && <MobileHeader />}
         <Outlet />
         {isMobile && <div style={{ height: 80 }} />}

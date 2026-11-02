@@ -9,18 +9,8 @@ interface KpiCardProps {
 
 function KpiCard({ color, label, value, footer }: KpiCardProps) {
   return (
-    <div
-      className="card"
-      style={{ padding: 18, position: 'relative', overflow: 'hidden' }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          marginBottom: 10,
-        }}
-      >
+    <div className="card" style={{ padding: 18, position: 'relative', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
         <div
           style={{
             width: 6,
@@ -32,11 +22,7 @@ function KpiCard({ color, label, value, footer }: KpiCardProps) {
         />
         <div
           className="label-caps"
-          style={{
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
+          style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
         >
           {label}
         </div>
