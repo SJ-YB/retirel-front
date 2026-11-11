@@ -243,7 +243,10 @@ function AccountsPage() {
     try {
       if (editingAccount) {
         const { bank, number } = apiIdentity(editingAccount)
-        const payload: UpdateAccountApiRequest = { nickname: values.name }
+        const payload: UpdateAccountApiRequest = {
+          nickname: values.name,
+          type: values.type,
+        }
         await apiClient.patch(
           `/v1/accounts/${encodeURIComponent(bank)}/${encodeURIComponent(number)}`,
           payload,

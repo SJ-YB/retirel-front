@@ -114,7 +114,7 @@ describe('AccountFormModal', () => {
     })
   })
 
-  it('수정 시 기존 유형을 보여주되 바꿀 수 없다', () => {
+  it('수정 시 기존 유형을 보여주고 유형은 바꿀 수 있다', () => {
     const account = fromApiAccount({
       number: '123-456',
       owner: '남편',
@@ -133,9 +133,37 @@ describe('AccountFormModal', () => {
     )
 
     expect(screen.getByText('주택청약')).toBeInTheDocument()
-    expect(screen.getByLabelText('계좌 유형')).toBeDisabled()
+    expect(screen.getByLabelText('계좌 유형')).not.toBeDisabled()
     expect(screen.getByText('우리은행')).toBeInTheDocument()
     expect(screen.getByLabelText('금융사')).toBeDisabled()
+  })
+
+  it('수정 시 유형을 퇴직연금(IRP)으로 바꿔 제출할 수 있다', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn().mockResolvedValue(undefined)
+    const account = fromApiAccount({
+      number: '123-456',
+      owner: '남편',
+      bank: 'hantu',
+      nickname: '연금',
+      type: 'brokerage',
+    })
+    render(
+      <AccountFormModal
+        open
+        account={account}
+        onClose={() => {}}
+        onSubmit={onSubmit}
+        loading={false}
+      />,
+    )
+
+    await user.click(screen.getByLabelText('계좌 유형'))
+    await user.click(await screen.findByTitle('퇴직연금(IRP)'))
+    await user.click(screen.getByRole('button', { name: '수정' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0][0]).toMatchObject({ type: 'irp' })
   })
 
   it('한국투자증권 계좌는 연동 섹션을 보여주고 납입 섹션은 숨긴다', () => {

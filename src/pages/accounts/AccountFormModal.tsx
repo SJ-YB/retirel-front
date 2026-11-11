@@ -133,9 +133,9 @@ function AccountFormModal({
           label="계좌 유형"
           rules={[{ required: true, message: '계좌 유형을 선택해주세요' }]}
         >
-          {/* 유형은 금융사·계좌번호처럼 본질적인 정보라 등록 후 바꾸지 않는다. */}
+          {/* 앱 도입 전에 등록한 계좌를 IRP 등으로 바로잡을 수 있도록 수정 시에도
+              유형은 바꿀 수 있다(IRP는 최근 3개월 체결을 연동으로 못 받는 등 규칙이 다르다). */}
           <Select
-            disabled={isEdit}
             options={Object.entries(ACCOUNT_TYPE_LABELS).map(
               ([value, label]) => ({ value, label }),
             )}
