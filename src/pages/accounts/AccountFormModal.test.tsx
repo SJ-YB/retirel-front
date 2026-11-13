@@ -13,6 +13,9 @@ vi.mock('./AccountCredentialSection', () => ({
 vi.mock('./AccountSyncSection', () => ({
   default: () => <div>sync-section</div>,
 }))
+vi.mock('./AccountStockEntrySection', () => ({
+  default: () => <div>stock-entry-section</div>,
+}))
 vi.mock('./AccountDepositSection', () => ({
   default: ({ bank, number }: { bank: string; number: string }) => (
     <div>
@@ -186,6 +189,7 @@ describe('AccountFormModal', () => {
 
     expect(screen.getByText('credential-section')).toBeInTheDocument()
     expect(screen.getByText('sync-section')).toBeInTheDocument()
+    expect(screen.getByText('stock-entry-section')).toBeInTheDocument()
     expect(screen.queryByText(/deposit-section/)).not.toBeInTheDocument()
   })
 
@@ -212,5 +216,6 @@ describe('AccountFormModal', () => {
     ).toBeInTheDocument()
     expect(screen.queryByText('credential-section')).not.toBeInTheDocument()
     expect(screen.queryByText('sync-section')).not.toBeInTheDocument()
+    expect(screen.queryByText('stock-entry-section')).not.toBeInTheDocument()
   })
 })
