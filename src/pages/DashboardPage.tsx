@@ -23,6 +23,7 @@ import TrendChart from '../components/charts/TrendChart'
 import type { TrendPoint } from '../components/charts/TrendChart'
 import AllocationDonut from '../components/charts/AllocationDonut'
 import IncomeBars from '../components/charts/IncomeBars'
+import PrincipalSection from './dashboard/PrincipalSection'
 import {
   mockDashboardSummary,
   mockAllocation,
@@ -578,6 +579,13 @@ function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* PRINCIPAL TREND */}
+        <PrincipalSection
+          start={startDateOf(range)}
+          rangeLabel={range}
+          isMobile={isMobile}
+        />
 
         {/* INCOME HISTORY */}
         <div className="card" style={{ padding: 20 }}>

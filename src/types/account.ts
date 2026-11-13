@@ -9,6 +9,7 @@ export type AccountType =
   | '해외주식'
   | '주택청약'
   | '퇴직연금(IRP)'
+  | '예적금'
 
 export type AccountOwner = '남편' | '아내' | '공동'
 
@@ -45,8 +46,12 @@ export interface CreateAccountRequest {
 export type Bank = 'hantu' | 'woori'
 
 // 백엔드의 계좌 유형 코드. brokerage: 증권, housing_subscription: 주택청약,
-// irp: 개인형 퇴직연금.
-export type AccountApiType = 'brokerage' | 'housing_subscription' | 'irp'
+// irp: 개인형 퇴직연금, savings: 예적금.
+export type AccountApiType =
+  | 'brokerage'
+  | 'housing_subscription'
+  | 'irp'
+  | 'savings'
 
 export interface CreateAccountApiRequest {
   number: string
