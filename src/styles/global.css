@@ -4,57 +4,52 @@
    Retirel — Dark Editorial Navy design tokens + base
    ───────────────────────────────────────────────────────────── */
 :root {
-  --bg: #0b1220;
-  --bg-2: #0d1526;
-  --card: #111a2e;
-  --card-2: #0f1728;
-  --card-hi: #17223b;
-  --surface: #111a2e;
+  --bg: #0B1220;
+  --bg-2: #0D1526;
+  --card: #111A2E;
+  --card-2: #0F1728;
+  --card-hi: #17223B;
+  --surface: #111A2E;
   --surface-hi: #162139;
 
   --border: rgba(255, 255, 255, 0.06);
-  --border-hi: rgba(255, 255, 255, 0.1);
+  --border-hi: rgba(255, 255, 255, 0.10);
 
-  --text: #e7ecf5;
-  --text-1: #e7ecf5;
-  --text-2: #a7b0c2;
-  --text-3: #6b7794;
-  --text-muted: #4e5870;
+  --text: #E7ECF5;
+  --text-1: #E7ECF5;
+  --text-2: #A7B0C2;
+  --text-3: #6B7794;
+  --text-muted: #4E5870;
 
-  --accent: #f5c26b;
-  --accent-hi: #ffd489;
+  --accent: #F5C26B;
+  --accent-hi: #FFD489;
   --accent-dim: rgba(245, 194, 107, 0.12);
   --accent-line: rgba(245, 194, 107, 0.35);
 
-  --emerald: #6ee7a8;
-  --sky: #7cb8f5;
-  --rose: #f38ba8;
-  --violet: #b89bf0;
+  --emerald: #6EE7A8;
+  --sky: #7CB8F5;
+  --rose: #F38BA8;
+  --violet: #B89BF0;
 
-  --pos: #6ee7a8;
-  --neg: #f38ba8;
+  --pos: #6EE7A8;
+  --neg: #F38BA8;
 
-  --good: #6ee7a8;
-  --bad: #f38ba8;
+  --good: #6EE7A8;
+  --bad: #F38BA8;
 
-  --korean: #f5c26b;
-  --us: #6ee7a8;
-  --debt: #f38ba8;
-  --deposit-color: #b89bf0;
+  --korean: #F5C26B;
+  --us: #6EE7A8;
+  --debt: #F38BA8;
+  --deposit-color: #B89BF0;
 
   --radius: 14px;
   --radius-sm: 10px;
 
-  --shadow-card:
-    0 1px 0 rgba(255, 255, 255, 0.03) inset,
-    0 12px 40px -20px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 12px 40px -20px rgba(0, 0, 0, 0.6);
   --shadow-drawer: -20px 0 60px rgba(0, 0, 0, 0.5);
 
   --serif: 'Instrument Serif', 'Cormorant Garamond', Georgia, serif;
-  --sans:
-    'Inter', 'Pretendard Variable', Pretendard, -apple-system,
-    BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Noto Sans KR',
-    sans-serif;
+  --sans: 'Inter', 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 }
 
@@ -141,16 +136,8 @@ a {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(
-      600px 240px at 85% -10%,
-      rgba(245, 194, 107, 0.1),
-      transparent 60%
-    ),
-    radial-gradient(
-      500px 260px at 10% 120%,
-      rgba(124, 184, 245, 0.06),
-      transparent 60%
-    );
+    radial-gradient(600px 240px at 85% -10%, rgba(245, 194, 107, 0.1), transparent 60%),
+    radial-gradient(500px 260px at 10% 120%, rgba(124, 184, 245, 0.06), transparent 60%);
   pointer-events: none;
 }
 
@@ -332,9 +319,7 @@ a {
   padding: 10px 12px;
   font-size: 13px;
   color: var(--text);
-  transition:
-    border-color 0.15s,
-    background 0.15s;
+  transition: border-color 0.15s, background 0.15s;
   width: 100%;
   outline: none;
 }

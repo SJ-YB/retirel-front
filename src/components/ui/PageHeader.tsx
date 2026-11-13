@@ -18,33 +18,17 @@ function PageHeader({ title, meta, right }: PageHeaderProps) {
         flexWrap: 'wrap',
       }}
     >
-      <div
-        style={{
-          minWidth: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 4,
-        }}
-      >
+      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
         <h1
           className="serif"
-          style={{
-            fontSize: 30,
-            margin: 0,
-            letterSpacing: '-0.01em',
-            lineHeight: 1.05,
-          }}
+          style={{ fontSize: 30, margin: 0, letterSpacing: '-0.01em', lineHeight: 1.05 }}
         >
           {title}
         </h1>
         {meta && (
           <div
             className="mono"
-            style={{
-              fontSize: 11,
-              color: 'var(--text-3)',
-              letterSpacing: '0.08em',
-            }}
+            style={{ fontSize: 11, color: 'var(--text-3)', letterSpacing: '0.08em' }}
           >
             {meta}
           </div>
