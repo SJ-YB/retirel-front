@@ -94,3 +94,14 @@ export interface SyncStatusResponse {
   fetched: number | null
   inserted: number | null
 }
+
+// 백엔드(POST /api/v1/accounts/{bank}/{number}/stock-entries) 요청 본문.
+// 공모주 배정·앱 이전 보유분·이체처럼 체결내역에 없는 주식 입출고.
+export interface ManualStockEntryApiRequest {
+  occurred_on: string // YYYY-MM-DD
+  ticker: string
+  quantity: string // 주 수(10진 문자열, 양수)
+  unit_price: string // 주당 취득가(10진 문자열, 무상이면 0)
+  currency: 'krw' | 'usd'
+  side: 'buy' | 'sell' // buy: 입고, sell: 출고
+}

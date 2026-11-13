@@ -11,6 +11,7 @@ import {
 } from '../../utils/account'
 import AccountCredentialSection from './AccountCredentialSection'
 import AccountDepositSection from './AccountDepositSection'
+import AccountStockEntrySection from './AccountStockEntrySection'
 import AccountSyncSection from './AccountSyncSection'
 
 interface AccountFormModalProps {
@@ -169,6 +170,8 @@ function AccountFormModal({
             <AccountCredentialSection {...apiIdentity(account)} />
             <Divider />
             <AccountSyncSection {...apiIdentity(account)} />
+            <Divider />
+            <AccountStockEntrySection {...apiIdentity(account)} />
           </>
         ) : (
           <>
