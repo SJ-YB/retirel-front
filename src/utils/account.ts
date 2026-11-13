@@ -25,6 +25,7 @@ export const ACCOUNT_TYPE_LABELS: Record<AccountApiType, AccountType> = {
   brokerage: '위탁',
   housing_subscription: '주택청약',
   irp: '퇴직연금(IRP)',
+  savings: '예적금',
 }
 
 const DEFAULT_ACCOUNT_TYPE: AccountApiType = 'brokerage'

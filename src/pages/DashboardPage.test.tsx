@@ -26,6 +26,7 @@ vi.mock('../components/charts/TrendChart', () => ({
 }))
 vi.mock('../components/charts/AllocationDonut', () => ({ default: () => null }))
 vi.mock('../components/charts/IncomeBars', () => ({ default: () => null }))
+vi.mock('../components/charts/PrincipalChart', () => ({ default: () => null }))
 
 const mockedGet = vi.mocked(apiClient.get)
 const mockedPost = vi.mocked(apiClient.post)

@@ -21,3 +21,17 @@ export interface NetWorthRefreshStatusResponse {
   running: boolean
   started: boolean
 }
+
+// 백엔드(GET /api/v1/net-worth/principal-trend)의 일별 금융자산 원금 한 점.
+// 모두 원화(원 단위) 누계이며 Decimal 문자열이다.
+export interface PrincipalPointResponse {
+  date: string
+  // 주식 매수금액(보유분 매수원가, 이동평균법. 달러 매수는 거래일 환율로 환산)
+  stock: string
+  // 예적금 납입원금(입금 − 출금 누계)
+  savings: string
+  // 주택청약 납입금(입금 − 출금 누계)
+  housing_subscription: string
+  // 세 구분의 합
+  total: string
+}

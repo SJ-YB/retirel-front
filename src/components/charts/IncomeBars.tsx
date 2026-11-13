@@ -9,16 +9,26 @@ import {
   Tooltip,
 } from 'recharts'
 import type { TooltipContentProps } from 'recharts'
-import type { ValueType, NameType } from 'recharts/types/component/DefaultTooltipContent'
+import type {
+  ValueType,
+  NameType,
+} from 'recharts/types/component/DefaultTooltipContent'
 
 interface IncomeBarsProps {
   data: IncomeHistoryPoint[]
   height?: number
 }
 
-const TICK_STYLE = { fill: '#4E5870', fontFamily: 'JetBrains Mono', fontSize: 10 }
+const TICK_STYLE = {
+  fill: '#4E5870',
+  fontFamily: 'JetBrains Mono',
+  fontSize: 10,
+}
 
-function IncomeTooltip({ active, payload }: TooltipContentProps<ValueType, NameType>) {
+function IncomeTooltip({
+  active,
+  payload,
+}: TooltipContentProps<ValueType, NameType>) {
   if (!active || !payload || payload.length === 0) return null
   const point = payload[0]?.payload as IncomeHistoryPoint | undefined
   if (!point) return null
@@ -49,7 +59,10 @@ function IncomeTooltip({ active, payload }: TooltipContentProps<ValueType, NameT
 function IncomeBars({ data, height = 200 }: IncomeBarsProps) {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 20, right: 16, bottom: 0, left: 16 }}>
+      <BarChart
+        data={data}
+        margin={{ top: 20, right: 16, bottom: 0, left: 16 }}
+      >
         <CartesianGrid stroke="rgba(255,255,255,0.04)" vertical={false} />
 
         <XAxis
@@ -61,10 +74,23 @@ function IncomeBars({ data, height = 200 }: IncomeBarsProps) {
 
         <YAxis hide />
 
-        <Tooltip content={IncomeTooltip} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+        <Tooltip
+          content={IncomeTooltip}
+          cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+        />
 
-        <Bar dataKey="interest" stackId="income" fill="var(--sky)" radius={[2, 2, 0, 0]} />
-        <Bar dataKey="dividend" stackId="income" fill="var(--accent)" radius={[2, 2, 0, 0]} />
+        <Bar
+          dataKey="interest"
+          stackId="income"
+          fill="var(--sky)"
+          radius={[2, 2, 0, 0]}
+        />
+        <Bar
+          dataKey="dividend"
+          stackId="income"
+          fill="var(--accent)"
+          radius={[2, 2, 0, 0]}
+        />
       </BarChart>
     </ResponsiveContainer>
   )

@@ -38,7 +38,13 @@ interface IconProps {
   style?: CSSProperties
 }
 
-function Icon({ name, size = 16, color = 'currentColor', strokeWidth = 1.5, style }: IconProps) {
+function Icon({
+  name,
+  size = 16,
+  color = 'currentColor',
+  strokeWidth = 1.5,
+  style,
+}: IconProps) {
   const svgProps = {
     width: size,
     height: size,
