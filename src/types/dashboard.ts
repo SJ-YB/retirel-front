@@ -20,9 +20,3 @@ export interface AllocationSlice {
   pct: number
   color: string
 }
-
-export interface IncomeHistoryPoint {
-  month: string
-  dividend: number
-  interest: number
-}
