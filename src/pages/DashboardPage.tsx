@@ -3,11 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiClient } from '../api'
 import { useUiStore } from '../stores'
 import type { ApiResponse } from '../types/api'
-import type {
-  AllocationSlice,
-  DashboardSummary,
-  IncomeHistoryPoint,
-} from '../types/dashboard'
+import type { AllocationSlice, DashboardSummary } from '../types/dashboard'
 import type {
   NetWorthPointResponse,
   NetWorthRefreshStatusResponse,
@@ -22,13 +18,9 @@ import Icon from '../components/ui/Icon'
 import TrendChart from '../components/charts/TrendChart'
 import type { TrendPoint } from '../components/charts/TrendChart'
 import AllocationDonut from '../components/charts/AllocationDonut'
-import IncomeBars from '../components/charts/IncomeBars'
 import PrincipalSection from './dashboard/PrincipalSection'
-import {
-  mockDashboardSummary,
-  mockAllocation,
-  mockIncomeHistory,
-} from '../mocks/data'
+import DividendSection from './dashboard/DividendSection'
+import { mockDashboardSummary, mockAllocation } from '../mocks/data'
 import type { Currency } from '../types/account'
 
 // 순자산 추이에서 볼 구간. 백엔드는 폐구간 필터만 받으므로 여기서 시작일을 계산한다.
@@ -119,7 +111,6 @@ function DashboardPage() {
   const [summary, setSummary] = useState<DashboardSummary>(mockDashboardSummary)
   const [allocation, setAllocation] =
     useState<AllocationSlice[]>(mockAllocation)
-  const [income, setIncome] = useState<IncomeHistoryPoint[]>(mockIncomeHistory)
 
   // 순자산 추이는 실제 연동 자산에서 평가된 값(GET /v1/net-worth/trend)을 읽는다.
   const [trend, setTrend] = useState<NetWorthPointResponse[]>([])
@@ -129,18 +120,14 @@ function DashboardPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [s, a, i] = await Promise.all([
+        const [s, a] = await Promise.all([
           apiClient.get<ApiResponse<DashboardSummary>>('/dashboard/summary'),
           apiClient.get<ApiResponse<AllocationSlice[]>>(
             '/dashboard/allocation',
           ),
-          apiClient.get<ApiResponse<IncomeHistoryPoint[]>>(
-            '/dashboard/income-history',
-          ),
         ])
         if (s.data?.data) setSummary(s.data.data)
         if (Array.isArray(a.data?.data)) setAllocation(a.data.data)
-        if (Array.isArray(i.data?.data)) setIncome(i.data.data)
       } catch {
         // fall back to mock defaults
       }
@@ -587,33 +574,8 @@ function DashboardPage() {
           isMobile={isMobile}
         />
 
-        {/* INCOME HISTORY */}
-        <div className="card" style={{ padding: 20 }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              marginBottom: 18,
-              flexWrap: 'wrap',
-              gap: 10,
-            }}
-          >
-            <div>
-              <div className="serif" style={{ fontSize: 18 }}>
-                배당 · 이자 히스토리
-              </div>
-              <div className="label-caps" style={{ marginTop: 4 }}>
-                MONTHLY INCOME · LAST 12 MONTHS
-              </div>
-            </div>
-            <div style={{ display: 'flex', gap: 14 }}>
-              <LegendDot color="var(--accent)" label="배당금" />
-              <LegendDot color="var(--sky)" label="이자" />
-            </div>
-          </div>
-          <IncomeBars data={income} height={isMobile ? 160 : 200} />
-        </div>
+        {/* DIVIDEND TREND */}
+        <DividendSection isMobile={isMobile} />
       </div>
     </>
   )

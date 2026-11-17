@@ -25,7 +25,7 @@ vi.mock('../components/charts/TrendChart', () => ({
   ),
 }))
 vi.mock('../components/charts/AllocationDonut', () => ({ default: () => null }))
-vi.mock('../components/charts/IncomeBars', () => ({ default: () => null }))
+vi.mock('../components/charts/DividendBars', () => ({ default: () => null }))
 vi.mock('../components/charts/PrincipalChart', () => ({ default: () => null }))
 
 const mockedGet = vi.mocked(apiClient.get)
@@ -55,7 +55,7 @@ function respond(trend: NetWorthPointResponse[], running = false) {
     if (url === '/v1/net-worth/refresh') {
       return Promise.resolve({ data: { running, started: false } })
     }
-    // 대시보드의 나머지 목 데이터(summary/allocation/income)는 그대로 둔다.
+    // 대시보드의 나머지 목 데이터(summary/allocation)와 배당·원금 추이는 그대로 둔다.
     return Promise.reject(new Error('unhandled'))
   })
 }
