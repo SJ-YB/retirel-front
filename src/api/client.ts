@@ -5,6 +5,8 @@ import { ENV } from '../config/env.ts'
 import type { ApiErrorResponse } from '../types/api.ts'
 import { useAuthStore } from '../stores/authStore.ts'
 
+export const LOGIN_URL = '/v1/auth/login'
+
 const apiClient = axios.create({
   baseURL: ENV.API_BASE_URL,
   timeout: 30000,
@@ -32,6 +34,8 @@ apiClient.interceptors.response.use(
 
       switch (status) {
         case 401:
+          // 로그인 요청 자체의 실패는 로그인 화면이 직접 안내한다(새로고침 방지).
+          if (error.config?.url === LOGIN_URL) break
           useAuthStore.getState().clearAuth()
           window.location.href = '/auth/login'
           break
