@@ -8,7 +8,7 @@ import { apiClient } from '../api'
 import type { WatchedStockResponse } from '../types/watchlist'
 
 vi.mock('../api', () => ({
-  apiClient: { get: vi.fn(), post: vi.fn(), delete: vi.fn() },
+  apiClient: { get: vi.fn(), post: vi.fn(), delete: vi.fn(), patch: vi.fn() },
 }))
 
 // vi.mock 팩토리는 호이스팅되므로, 그 안에서 참조하는 스파이도 vi.hoisted로
@@ -21,6 +21,7 @@ vi.mock('../stores', () => ({
 const mockedGet = vi.mocked(apiClient.get)
 const mockedPost = vi.mocked(apiClient.post)
 const mockedDelete = vi.mocked(apiClient.delete)
+const mockedPatch = vi.mocked(apiClient.patch)
 
 function stock(
   overrides: Partial<WatchedStockResponse> = {},
@@ -29,6 +30,7 @@ function stock(
     market: 'nas',
     ticker: 'NVDA',
     name: '엔비디아',
+    asset_class: 'stock',
     created_at: '2026-09-08T10:00:00',
     ...overrides,
   }
@@ -192,5 +194,36 @@ describe('WatchlistPage', () => {
     expect(
       await screen.findByText('등록된 관찰 종목이 없습니다'),
     ).toBeInTheDocument()
+  })
+
+  it('자산군을 바꾸면 PATCH로 저장하고 목록에 반영한다', async () => {
+    const user = userEvent.setup()
+    mockedGet.mockResolvedValueOnce({
+      data: [stock({ market: 'ams', ticker: 'TLT', name: null })],
+    })
+    mockedPatch.mockResolvedValue({
+      data: stock({
+        market: 'ams',
+        ticker: 'TLT',
+        name: null,
+        asset_class: 'bond',
+      }),
+    })
+
+    render(<WatchlistPage />)
+    await screen.findByText('TLT')
+
+    await user.click(screen.getByRole('combobox', { name: 'TLT 자산군' }))
+    await user.click(await screen.findByTitle('채권'))
+
+    await waitFor(() =>
+      expect(mockedPatch).toHaveBeenCalledWith('/v1/watchlist/ams/TLT', {
+        asset_class: 'bond',
+      }),
+    )
+    expect(showToast).toHaveBeenCalledWith({
+      message: 'TLT을(를) 채권(으)로 지정했습니다',
+      type: 'success',
+    })
   })
 })

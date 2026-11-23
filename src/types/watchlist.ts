@@ -2,11 +2,16 @@
 // 해외는 심볼만으로 종목이 특정되지 않아 거래소를 함께 식별자로 쓴다.
 export type Market = 'krx' | 'nas' | 'nys' | 'ams'
 
+// 종목의 자산군. 백엔드 AssetClass enum과 같은 문자열을 사용한다.
+// 사용자가 관찰 종목 화면에서 지정하며, 지정하기 전에는 stock이다.
+export type AssetClass = 'stock' | 'bond' | 'commodity' | 'cash' | 'other'
+
 // 백엔드(GET/POST /api/v1/watchlist)가 반환하는 관찰 종목 응답 본문.
 export interface WatchedStockResponse {
   market: Market
   ticker: string
   name: string | null
+  asset_class: AssetClass
   created_at: string | null
 }
 

@@ -1,3 +1,5 @@
+import type { AssetClass, Market } from './watchlist'
+
 // 백엔드(GET /api/v1/net-worth/trend)의 일별 순자산 한 점.
 // 금액은 Decimal이 문자열로 직렬화된 값이다(JSON number로 바꾸면 자릿수가
 // 유실되므로 백엔드가 문자열로 보낸다). 화면에서 Number()로 바꿔 쓴다.
@@ -34,4 +36,35 @@ export interface PrincipalPointResponse {
   housing_subscription: string
   // 세 구분의 합
   total: string
+}
+
+// 백엔드(GET /api/v1/net-worth/allocation)의 자산군별 평가액.
+// 오늘 기준 보유 수량 × 마지막 종가 × 마지막 환율로 계산한 원화 금액(Decimal 문자열).
+export interface AssetClassValueResponse {
+  asset_class: AssetClass
+  value_krw: string
+}
+
+export interface HoldingValueResponse {
+  market: Market
+  ticker: string
+  name: string | null
+  asset_class: AssetClass
+  quantity: string
+  close: string
+  close_date: string
+  currency: 'KRW' | 'USD'
+  value_krw: string
+}
+
+export interface AllocationResponse {
+  // 평가에 쓴 가장 늦은 종가 일자. 평가한 종목이 없으면 null.
+  as_of: string | null
+  usdkrw: string | null
+  // 평가한 종목의 원화 합(증권 평가액). 비중의 분모다.
+  total_krw: string
+  classes: AssetClassValueResponse[]
+  holdings: HoldingValueResponse[]
+  // 보유 중이지만 시세·환율이 없어 비중에서 빠진 종목.
+  unpriced_tickers: string[]
 }

@@ -6,7 +6,6 @@ import {
   mockHoldings,
   mockAssetsSummary,
   mockDashboardSummary,
-  mockAllocation,
 } from './data'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
@@ -19,9 +18,6 @@ export const handlers = [
       message: 'OK',
       data: mockDashboardSummary,
     }),
-  ),
-  http.get(`${API_BASE}/dashboard/allocation`, () =>
-    HttpResponse.json({ success: true, message: 'OK', data: mockAllocation }),
   ),
 
   // ── 계좌 ──────────────────────────────────────
