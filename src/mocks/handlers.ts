@@ -1,25 +1,11 @@
 import { http, HttpResponse } from 'msw'
 
 import type { UpdateAccountRequest } from '../types/account'
-import {
-  mockAccounts,
-  mockHoldings,
-  mockAssetsSummary,
-  mockDashboardSummary,
-} from './data'
+import { mockAccounts, mockHoldings, mockAssetsSummary } from './data'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
 export const handlers = [
-  // ── 대시보드 ──────────────────────────────────
-  http.get(`${API_BASE}/dashboard/summary`, () =>
-    HttpResponse.json({
-      success: true,
-      message: 'OK',
-      data: mockDashboardSummary,
-    }),
-  ),
-
   // ── 계좌 ──────────────────────────────────────
   http.get(`${API_BASE}/accounts`, () =>
     HttpResponse.json({

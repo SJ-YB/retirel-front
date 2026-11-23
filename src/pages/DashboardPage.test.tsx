@@ -56,8 +56,12 @@ function point(
   }
 }
 
-/** URL별로 응답을 갈라 주는 apiClient.get 스텁. */
-function respond(trend: NetWorthPointResponse[], running = false) {
+/** URL별로 응답을 갈라 주는 apiClient.get 스텁. extra에 없는 URL은 실패한다. */
+function respond(
+  trend: NetWorthPointResponse[],
+  running = false,
+  extra: Record<string, unknown> = {},
+) {
   mockedGet.mockImplementation((url: string) => {
     if (url === '/v1/net-worth/trend') {
       return Promise.resolve({ data: trend })
@@ -65,7 +69,7 @@ function respond(trend: NetWorthPointResponse[], running = false) {
     if (url === '/v1/net-worth/refresh') {
       return Promise.resolve({ data: { running, started: false } })
     }
-    // 대시보드의 나머지 목 데이터(summary)와 비중·배당·원금 추이는 그대로 둔다.
+    if (url in extra) return Promise.resolve({ data: extra[url] })
     return Promise.reject(new Error('unhandled'))
   })
 }
@@ -157,7 +161,91 @@ describe('DashboardPage', () => {
     expect(
       await screen.findByText(/아직 평가된 순자산이 없습니다/),
     ).toBeInTheDocument()
-    expect(screen.getByText('—')).toBeInTheDocument()
+    // 순자산·지표 자리에 목 값 대신 '—'를 보여준다.
+    expect(screen.getAllByText('—').length).toBeGreaterThan(1)
+  })
+
+  it('평가 손익·부채·보증금·배당을 실제 응답으로 계산해 보여준다', async () => {
+    const year = new Date().getFullYear()
+    respond(
+      [
+        point({
+          date: '2026-08-13',
+          krw_assets: '800000',
+          usd_assets: '100.00',
+        }),
+        point({
+          date: '2026-09-13',
+          krw_assets: '1000000',
+          usd_assets: '110.00',
+          net_worth_krw: '1200000',
+        }),
+      ],
+      false,
+      {
+        '/v1/net-worth/principal-trend': [
+          {
+            date: '2026-09-13',
+            stock: '1000000',
+            savings: '0',
+            housing_subscription: '0',
+            total: '1000000',
+          },
+        ],
+        '/v1/loans': [
+          {
+            id: 'l1',
+            alias: '주담대',
+            principal: '300000000',
+            interest_rate: '3.5',
+            maturity_date: '2040-01-01',
+            created_at: null,
+            updated_at: null,
+          },
+        ],
+        '/v1/rental-deposits': [
+          {
+            id: 'd1',
+            alias: '전세',
+            amount: '180000000',
+            maturity_date: '2099-08-31',
+            created_at: null,
+            updated_at: null,
+          },
+        ],
+        '/v1/dividends/monthly-trend': [
+          {
+            month: `${year}-03`,
+            domestic: '12345',
+            overseas: '0',
+            overseas_usd: '0',
+            estimated: '0',
+            total: '12345',
+          },
+        ],
+      },
+    )
+
+    renderPage()
+
+    // 평가액 1,200,000 vs 매수원가 1,000,000
+    expect(await screen.findByText('+20.00%')).toBeInTheDocument()
+    expect(screen.getByText('+200,000원')).toBeInTheDocument()
+    expect(mockedGet).toHaveBeenCalledWith('/v1/net-worth/principal-trend', {
+      params: { start: '2026-09-13', end: '2026-09-13' },
+    })
+    // 국내 800,000 → 1,000,000 (+25%), 미국 $100 → $110 (+10%)
+    expect(screen.getByText('₩ 1.0M')).toBeInTheDocument()
+    expect(screen.getByText('▲ +25.00%')).toBeInTheDocument()
+    expect(screen.getByText('$ 110')).toBeInTheDocument()
+    expect(screen.getByText('▲ +10.00%')).toBeInTheDocument()
+    expect(screen.getByText('₩ 300.0M')).toBeInTheDocument()
+    expect(screen.getByText('평균 금리 3.50% · 1건')).toBeInTheDocument()
+    expect(screen.getByText('₩ 180.0M')).toBeInTheDocument()
+    expect(screen.getByText("임대 · 만기 '99.08")).toBeInTheDocument()
+    expect(
+      screen.getByText(`${year} 배당 · 세후`).nextElementSibling,
+    ).toHaveTextContent('12,345원')
   })
 
   it('새로고침을 누르면 갱신을 요청하고 끝나면 추이를 다시 읽는다', async () => {

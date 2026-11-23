@@ -2,7 +2,6 @@
 // 백엔드 준비 시 이 파일을 실제 API 호출로 대체한다.
 
 import type { Account } from '../types/account'
-import type { DashboardSummary } from '../types/dashboard'
 import type { Holding, AssetsSummary } from '../types/asset'
 import type { Transaction } from '../types/transaction'
 
@@ -252,20 +251,6 @@ export const mockTransactions: Transaction[] = [
 ]
 
 // ── 대시보드 ────────────────────────────────────────────
-export const mockDashboardSummary: DashboardSummary = {
-  netWorth: 1_847_293_508,
-  currency: 'KRW',
-  usdkrw: 1364.2,
-  cumulativeTwr: 24.82,
-  ytd: 8.14,
-  monthlyInterest: 300_000,
-  monthlyPnl: 62_480_000,
-  koreanAssets: { value: 982_400_000, deltaPct: 3.2 },
-  usAssets: { value: 684_210, deltaPct: 5.0 },
-  debt: { value: 240_000_000, ratePct: 3.42 },
-  deposit: { value: 180_000_000, nextMaturity: "'27.08" },
-}
-
 // ── 보유 종목 ───────────────────────────────────────────
 const trendUp = [
   0.6, 0.62, 0.58, 0.66, 0.64, 0.7, 0.72, 0.68, 0.76, 0.78, 0.74, 0.82, 0.8,

@@ -2,13 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { apiClient } from '../api'
 import { useUiStore } from '../stores'
-import type { ApiResponse } from '../types/api'
-import type { DashboardSummary } from '../types/dashboard'
+import type { MonthlyDividendResponse } from '../types/dividend'
+import type { LoanResponse } from '../types/loan'
 import type {
   AllocationResponse,
   NetWorthPointResponse,
   NetWorthRefreshStatusResponse,
+  PrincipalPointResponse,
 } from '../types/networth'
+import type { RentalDepositResponse } from '../types/rentalDeposit'
 import { fmt } from '../utils/format'
 import { useIsMobile } from '../hooks/useIsMobile'
 import PageHeader from '../components/ui/PageHeader'
@@ -22,7 +24,15 @@ import PrincipalSection from './dashboard/PrincipalSection'
 import DividendSection from './dashboard/DividendSection'
 import AllocationCard from './dashboard/AllocationCard'
 import RebalanceSection from './dashboard/RebalanceSection'
-import { mockDashboardSummary } from '../mocks/data'
+import {
+  dividendsOfYear,
+  monthlyChange,
+  shortYearMonth,
+  summarizeDeposits,
+  summarizeLoans,
+  unrealizedGain,
+} from './dashboard/summary'
+import type { Change } from './dashboard/summary'
 import type { Currency } from '../types/account'
 
 // 순자산 추이에서 볼 구간. 백엔드는 폐구간 필터만 받으므로 여기서 시작일을 계산한다.
@@ -59,14 +69,20 @@ function netWorthOf(point: NetWorthPointResponse, ccy: Currency): number {
   return Number(ccy === 'KRW' ? point.net_worth_krw : point.net_worth_usd)
 }
 
+/** 양수면 pos, 음수면 neg 색을 입힌다. 값이 없으면 색을 입히지 않는다. */
+function toneOf(n: number | null | undefined): 'pos' | 'neg' | undefined {
+  if (n == null || n === 0) return undefined
+  return n > 0 ? 'pos' : 'neg'
+}
+
 function KpiInline({
   label,
   value,
-  pos,
+  tone,
 }: {
   label: string
   value: string
-  pos?: boolean
+  tone?: 'pos' | 'neg'
 }) {
   return (
     <div>
@@ -74,12 +90,28 @@ function KpiInline({
         {label}
       </div>
       <div
-        className={'mono' + (pos ? ' pos' : '')}
+        className={'mono' + (tone ? ` ${tone}` : '')}
         style={{ fontSize: 18, letterSpacing: '-0.01em' }}
       >
         {value}
       </div>
     </div>
+  )
+}
+
+/** KPI 카드 하단의 '최근 1개월 변동' 표기. */
+function MonthlyDelta({ change }: { change: Change | null }) {
+  if (!change || change.pct == null) {
+    return <span className="muted">최근 1개월 변동 없음</span>
+  }
+  const up = change.amount >= 0
+  return (
+    <>
+      <span className={up ? 'pos' : 'neg'}>
+        {up ? '▲' : '▼'} {fmt.pct(change.pct)}
+      </span>{' '}
+      <span className="muted">최근 1개월</span>
+    </>
   )
 }
 
@@ -109,26 +141,44 @@ function DashboardPage() {
   const [heroCcy, setHeroCcy] = useState<Currency>('KRW')
   const [chartCcy, setChartCcy] = useState<Currency>('KRW')
 
-  const [summary, setSummary] = useState<DashboardSummary>(mockDashboardSummary)
-
   // 순자산 추이는 실제 연동 자산에서 평가된 값(GET /v1/net-worth/trend)을 읽는다.
   const [trend, setTrend] = useState<NetWorthPointResponse[]>([])
   const [loadingTrend, setLoadingTrend] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
+  // 부채·보증금·올해 배당은 순자산 갱신과 무관하게 화면에 들어올 때 한 번 읽는다.
+  // 각자 실패해도 다른 지표는 보여야 하므로 따로 받아 실패한 것만 '—'로 둔다.
+  const [loans, setLoans] = useState<LoanResponse[] | null>(null)
+  const [deposits, setDeposits] = useState<RentalDepositResponse[] | null>(null)
+  const [dividends, setDividends] = useState<MonthlyDividendResponse[] | null>(
+    null,
+  )
+
   useEffect(() => {
-    const load = async () => {
+    let cancelled = false
+    const year = new Date().getFullYear()
+    const loadList = async <T,>(
+      url: string,
+      set: (value: T[]) => void,
+      params?: Record<string, string>,
+    ) => {
       try {
-        const s =
-          await apiClient.get<ApiResponse<DashboardSummary>>(
-            '/dashboard/summary',
-          )
-        if (s.data?.data) setSummary(s.data.data)
+        const { data } = await apiClient.get<T[]>(url, params && { params })
+        if (!cancelled) set(Array.isArray(data) ? data : [])
       } catch {
-        // fall back to mock defaults
+        // 실패하면 null로 남아 '—'로 보인다.
       }
     }
-    load()
+    loadList<LoanResponse>('/v1/loans', setLoans)
+    loadList<RentalDepositResponse>('/v1/rental-deposits', setDeposits)
+    loadList<MonthlyDividendResponse>(
+      '/v1/dividends/monthly-trend',
+      setDividends,
+      { start: `${year}-01-01` },
+    )
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const fetchTrend = useCallback(async () => {
@@ -228,8 +278,66 @@ function DashboardPage() {
   const heroValue = latest
     ? Math.round(netWorthOf(latest, heroCcy)).toLocaleString('en-US')
     : '—'
-  // 환율은 평가에 실제로 쓴 값(그 날의 USD/KRW)을 보여준다.
-  const usdkrw = latest ? Number(latest.usdkrw) : summary.usdkrw
+  // 환율은 평가에 실제로 쓴 값(그 날의 USD/KRW)을 보여준다. 평가된 순자산이
+  // 없으면 비중 계산에 쓴 마지막 환율로 대신한다.
+  const usdkrw = latest
+    ? Number(latest.usdkrw)
+    : allocation?.usdkrw != null
+      ? Number(allocation.usdkrw)
+      : null
+
+  // 평가 손익: 같은 날의 증권 평가액(순자산)과 보유 주식 매수원가를 비교한다.
+  // 순자산은 증권 평가액만 담으므로 원금도 주식 매수금액만 쓴다.
+  const latestDate = latest?.date ?? null
+  const [stockPrincipal, setStockPrincipal] = useState<{
+    date: string
+    value: number
+  } | null>(null)
+
+  useEffect(() => {
+    if (!latestDate) return
+    let cancelled = false
+    const load = async () => {
+      try {
+        const { data } = await apiClient.get<PrincipalPointResponse[]>(
+          '/v1/net-worth/principal-trend',
+          { params: { start: latestDate, end: latestDate } },
+        )
+        const last = Array.isArray(data) ? data[data.length - 1] : undefined
+        if (!cancelled)
+          setStockPrincipal(
+            last ? { date: latestDate, value: Number(last.stock) } : null,
+          )
+      } catch {
+        if (!cancelled) setStockPrincipal(null)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [latestDate])
+
+  const gain =
+    latest && stockPrincipal && stockPrincipal.date === latest.date
+      ? unrealizedGain(Number(latest.net_worth_krw), stockPrincipal.value)
+      : null
+
+  const krwChange = useMemo(
+    () => monthlyChange(trend, (p) => Number(p.krw_assets)),
+    [trend],
+  )
+  const usdChange = useMemo(
+    () => monthlyChange(trend, (p) => Number(p.usd_assets)),
+    [trend],
+  )
+  const debt = loans ? summarizeLoans(loans) : null
+  const deposit = deposits
+    ? summarizeDeposits(deposits, toIsoDate(new Date()))
+    : null
+  const dividendYtd = dividends
+    ? dividendsOfYear(dividends, new Date().getFullYear())
+    : null
 
   const chartPoints: TrendPoint[] = useMemo(
     () =>
@@ -361,17 +469,27 @@ function DashboardPage() {
                 }}
               >
                 <KpiInline
-                  label="CUMULATIVE TWR"
-                  value={fmt.pct(summary.cumulativeTwr)}
-                  pos
+                  label="평가 수익률"
+                  value={gain?.pct != null ? fmt.pct(gain.pct) : '—'}
+                  tone={toneOf(gain?.pct)}
                 />
-                <KpiInline label="YTD" value={fmt.pct(summary.ytd)} pos />
                 <KpiInline
-                  label="매달·이자 누적"
-                  value={`+${summary.monthlyPnl.toLocaleString()}원`}
-                  pos
+                  label="평가 손익"
+                  value={
+                    gain
+                      ? `${gain.amount >= 0 ? '+' : '-'}${fmt.won(Math.abs(gain.amount))}`
+                      : '—'
+                  }
+                  tone={toneOf(gain?.amount)}
                 />
-                <KpiInline label="USD/KRW" value={`₩ ${usdkrw.toFixed(2)}`} />
+                <KpiInline
+                  label={`${new Date().getFullYear()} 배당 · 세후`}
+                  value={dividendYtd != null ? fmt.won(dividendYtd) : '—'}
+                />
+                <KpiInline
+                  label="USD/KRW"
+                  value={usdkrw != null ? `₩ ${usdkrw.toFixed(2)}` : '—'}
+                />
               </div>
             </div>
 
@@ -392,41 +510,41 @@ function DashboardPage() {
           <KpiCard
             color="var(--accent)"
             label="KOREAN ASSETS"
-            value={fmt.krwShort(summary.koreanAssets.value)}
-            footer={
-              <>
-                <span className="pos">▲ +{summary.koreanAssets.deltaPct}%</span>{' '}
-                <span className="muted">this month</span>
-              </>
-            }
+            value={latest ? fmt.krwShort(Number(latest.krw_assets)) : '—'}
+            footer={latest ? <MonthlyDelta change={krwChange} /> : undefined}
           />
           <KpiCard
             color="var(--emerald)"
             label="US ASSETS"
-            value={`$ ${summary.usAssets.value.toLocaleString()}`}
-            footer={
-              <>
-                <span className="pos">▲ +{summary.usAssets.deltaPct}%</span>{' '}
-                <span className="muted">this month</span>
-              </>
-            }
+            value={latest ? fmt.usd(Number(latest.usd_assets)) : '—'}
+            footer={latest ? <MonthlyDelta change={usdChange} /> : undefined}
           />
           <KpiCard
             color="var(--rose)"
             label="DEBT · 부채"
-            value={fmt.krwShort(summary.debt.value)}
+            value={debt ? fmt.krwShort(debt.total) : '—'}
             footer={
-              <span className="muted">담보 이율 {summary.debt.ratePct}%</span>
+              debt && (
+                <span className="muted">
+                  {debt.weightedRatePct != null
+                    ? `평균 금리 ${debt.weightedRatePct.toFixed(2)}% · ${loans?.length}건`
+                    : '등록된 대출 없음'}
+                </span>
+              )
             }
           />
           <KpiCard
             color="var(--violet)"
             label="DEPOSIT · 보증금"
-            value={fmt.krwShort(summary.deposit.value)}
+            value={deposit ? fmt.krwShort(deposit.total) : '—'}
             footer={
-              <span className="muted">
-                임대 · 만기 {summary.deposit.nextMaturity}
-              </span>
+              deposit && (
+                <span className="muted">
+                  {deposit.nextMaturity
+                    ? `임대 · 만기 ${shortYearMonth(deposit.nextMaturity)}`
+                    : '등록된 보증금 없음'}
+                </span>
+              )
             }
           />
         </div>
