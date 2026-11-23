@@ -7,11 +7,19 @@ import { useUiStore } from '../stores'
 import { useIsMobile } from '../hooks/useIsMobile'
 import type {
   AddWatchedStockRequest,
+  AssetClass,
   Market,
   WatchedStockResponse,
 } from '../types/watchlist'
 import PageHeader from '../components/ui/PageHeader'
 import Icon from '../components/ui/Icon'
+import { ASSET_CLASS_META, ASSET_CLASS_ORDER } from './dashboard/allocation'
+
+// 홈 화면 '자산군별 비중'을 나누는 기준. 지정하지 않으면 주식이다.
+const ASSET_CLASS_OPTIONS = ASSET_CLASS_ORDER.map((value) => ({
+  value,
+  label: ASSET_CLASS_META[value].label,
+}))
 
 const MARKETS: { value: Market; label: string }[] = [
   { value: 'krx', label: '국내 (KRX)' },
@@ -53,11 +61,15 @@ function formatCreatedAt(iso: string | null): string {
 function WatchedStockRow({
   stock,
   removing,
+  updating,
   onRemove,
+  onChangeAssetClass,
 }: {
   stock: WatchedStockResponse
   removing: boolean
+  updating: boolean
   onRemove: () => void
+  onChangeAssetClass: (assetClass: AssetClass) => void
 }) {
   return (
     <div
@@ -103,6 +115,17 @@ function WatchedStockRow({
         )}
       </div>
 
+      <Select<AssetClass>
+        size="small"
+        value={stock.asset_class ?? 'stock'}
+        options={ASSET_CLASS_OPTIONS}
+        onChange={onChangeAssetClass}
+        loading={updating}
+        disabled={updating}
+        style={{ width: 104, flexShrink: 0 }}
+        aria-label={`${stock.ticker} 자산군`}
+      />
+
       <div className="mono" style={{ fontSize: 11, color: 'var(--text-3)' }}>
         {formatCreatedAt(stock.created_at)}
       </div>
@@ -140,6 +163,7 @@ function WatchlistPage() {
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [removingKey, setRemovingKey] = useState<string | null>(null)
+  const [updatingKey, setUpdatingKey] = useState<string | null>(null)
 
   const [market, setMarket] = useState<Market>('krx')
   const [ticker, setTicker] = useState('')
@@ -213,11 +237,38 @@ function WatchlistPage() {
     }
   }
 
+  const handleChangeAssetClass = async (
+    stock: WatchedStockResponse,
+    assetClass: AssetClass,
+  ) => {
+    const key = watchedKey(stock)
+    setUpdatingKey(key)
+    try {
+      const { data } = await apiClient.patch<WatchedStockResponse>(
+        `/v1/watchlist/${encodeURIComponent(stock.market)}/${encodeURIComponent(
+          stock.ticker,
+        )}`,
+        { asset_class: assetClass },
+      )
+      setStocks((prev) =>
+        prev.map((s) => (watchedKey(s) === key ? { ...s, ...data } : s)),
+      )
+      showToast({
+        message: `${stock.ticker}을(를) ${ASSET_CLASS_META[assetClass].label}(으)로 지정했습니다`,
+        type: 'success',
+      })
+    } catch {
+      showToast({ message: '자산군 변경에 실패했습니다', type: 'error' })
+    } finally {
+      setUpdatingKey(null)
+    }
+  }
+
   return (
     <>
       <PageHeader
         title="Watchlist"
-        meta={`${stocks.length} stocks · 배당 · 분배 수집 대상`}
+        meta={`${stocks.length} stocks · 배당 · 분배 수집 · 자산군 지정`}
       />
 
       <div
@@ -295,7 +346,11 @@ function WatchlistPage() {
                 key={watchedKey(stock)}
                 stock={stock}
                 removing={removingKey === watchedKey(stock)}
+                updating={updatingKey === watchedKey(stock)}
                 onRemove={() => handleRemove(stock)}
+                onChangeAssetClass={(assetClass) =>
+                  handleChangeAssetClass(stock, assetClass)
+                }
               />
             ))
           )}

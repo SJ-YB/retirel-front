@@ -2,7 +2,7 @@
 // 백엔드 준비 시 이 파일을 실제 API 호출로 대체한다.
 
 import type { Account } from '../types/account'
-import type { DashboardSummary, AllocationSlice } from '../types/dashboard'
+import type { DashboardSummary } from '../types/dashboard'
 import type { Holding, AssetsSummary } from '../types/asset'
 import type { Transaction } from '../types/transaction'
 
@@ -265,12 +265,6 @@ export const mockDashboardSummary: DashboardSummary = {
   debt: { value: 240_000_000, ratePct: 3.42 },
   deposit: { value: 180_000_000, nextMaturity: "'27.08" },
 }
-
-export const mockAllocation: AllocationSlice[] = [
-  { key: 'stocks', label: '주식 · ETF', pct: 62.0, color: 'var(--accent)' },
-  { key: 'deposit', label: '예금', pct: 22.2, color: 'var(--sky)' },
-  { key: 'deposit2', label: '보증금', pct: 15.8, color: 'var(--emerald)' },
-]
 
 // ── 보유 종목 ───────────────────────────────────────────
 const trendUp = [

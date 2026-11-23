@@ -3,8 +3,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiClient } from '../api'
 import { useUiStore } from '../stores'
 import type { ApiResponse } from '../types/api'
-import type { AllocationSlice, DashboardSummary } from '../types/dashboard'
+import type { DashboardSummary } from '../types/dashboard'
 import type {
+  AllocationResponse,
   NetWorthPointResponse,
   NetWorthRefreshStatusResponse,
 } from '../types/networth'
@@ -17,10 +18,11 @@ import KpiCard from '../components/ui/KpiCard'
 import Icon from '../components/ui/Icon'
 import TrendChart from '../components/charts/TrendChart'
 import type { TrendPoint } from '../components/charts/TrendChart'
-import AllocationDonut from '../components/charts/AllocationDonut'
 import PrincipalSection from './dashboard/PrincipalSection'
 import DividendSection from './dashboard/DividendSection'
-import { mockDashboardSummary, mockAllocation } from '../mocks/data'
+import AllocationCard from './dashboard/AllocationCard'
+import RebalanceSection from './dashboard/RebalanceSection'
+import { mockDashboardSummary } from '../mocks/data'
 import type { Currency } from '../types/account'
 
 // 순자산 추이에서 볼 구간. 백엔드는 폐구간 필터만 받으므로 여기서 시작일을 계산한다.
@@ -106,11 +108,8 @@ function DashboardPage() {
   const [range, setRange] = useState<RangeValue>('6M')
   const [heroCcy, setHeroCcy] = useState<Currency>('KRW')
   const [chartCcy, setChartCcy] = useState<Currency>('KRW')
-  const [allocMode, setAllocMode] = useState<'유형' | '통화'>('유형')
 
   const [summary, setSummary] = useState<DashboardSummary>(mockDashboardSummary)
-  const [allocation, setAllocation] =
-    useState<AllocationSlice[]>(mockAllocation)
 
   // 순자산 추이는 실제 연동 자산에서 평가된 값(GET /v1/net-worth/trend)을 읽는다.
   const [trend, setTrend] = useState<NetWorthPointResponse[]>([])
@@ -120,14 +119,11 @@ function DashboardPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [s, a] = await Promise.all([
-          apiClient.get<ApiResponse<DashboardSummary>>('/dashboard/summary'),
-          apiClient.get<ApiResponse<AllocationSlice[]>>(
-            '/dashboard/allocation',
-          ),
-        ])
+        const s =
+          await apiClient.get<ApiResponse<DashboardSummary>>(
+            '/dashboard/summary',
+          )
         if (s.data?.data) setSummary(s.data.data)
-        if (Array.isArray(a.data?.data)) setAllocation(a.data.data)
       } catch {
         // fall back to mock defaults
       }
@@ -157,6 +153,29 @@ function DashboardPage() {
   useEffect(() => {
     fetchTrend()
   }, [fetchTrend])
+
+  // 자산군별 비중(GET /v1/net-worth/allocation). 오늘 기준 보유 수량 × 마지막 종가로
+  // 백엔드가 조회 때마다 계산한다.
+  const [allocation, setAllocation] = useState<AllocationResponse | null>(null)
+  const [loadingAllocation, setLoadingAllocation] = useState(true)
+
+  const fetchAllocation = useCallback(async () => {
+    setLoadingAllocation(true)
+    try {
+      const { data } = await apiClient.get<AllocationResponse>(
+        '/v1/net-worth/allocation',
+      )
+      setAllocation(data ?? null)
+    } catch {
+      setAllocation(null)
+    } finally {
+      setLoadingAllocation(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchAllocation()
+  }, [fetchAllocation])
 
   const handleRefresh = async () => {
     try {
@@ -192,7 +211,7 @@ function DashboardPage() {
         if (cancelled) return
         if (!data.running || attempts >= POLL_LIMIT) {
           setRefreshing(false)
-          await fetchTrend()
+          await Promise.all([fetchTrend(), fetchAllocation()])
         }
       } catch {
         if (!cancelled) setRefreshing(false)
@@ -203,7 +222,7 @@ function DashboardPage() {
       cancelled = true
       clearInterval(timer)
     }
-  }, [refreshing, fetchTrend])
+  }, [refreshing, fetchTrend, fetchAllocation])
 
   const latest = trend.length > 0 ? trend[trend.length - 1] : null
   const heroValue = latest
@@ -498,74 +517,11 @@ function DashboardPage() {
             </div>
           </div>
 
-          <div className="card" style={{ padding: 20 }}>
-            <div style={{ marginBottom: 14 }}>
-              <div className="serif" style={{ fontSize: 18 }}>
-                자산 구성
-              </div>
-              <div className="label-caps" style={{ marginTop: 4 }}>
-                ASSET ALLOCATION · BY{' '}
-                {allocMode === '유형' ? 'TYPE' : 'CURRENCY'}
-              </div>
-            </div>
-            <div className="seg" style={{ marginBottom: 20 }}>
-              {(['유형', '통화'] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setAllocMode(m)}
-                  className={allocMode === m ? 'active' : ''}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 20,
-                flexWrap: 'wrap',
-                justifyContent: 'center',
-              }}
-            >
-              <AllocationDonut
-                data={allocation}
-                size={160}
-                total={fmt.krwShort(summary.netWorth)}
-              />
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                  flex: 1,
-                  minWidth: 140,
-                }}
-              >
-                {allocation.map((a) => (
-                  <div
-                    key={a.key}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10 }}
-                  >
-                    <div
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        background: a.color,
-                      }}
-                    />
-                    <div style={{ flex: 1, fontSize: 13 }}>{a.label}</div>
-                    <div className="mono" style={{ fontSize: 13 }}>
-                      {a.pct.toFixed(1)}%
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <AllocationCard allocation={allocation} loading={loadingAllocation} />
         </div>
+
+        {/* REBALANCE GUIDE */}
+        <RebalanceSection allocation={allocation} isMobile={isMobile} />
 
         {/* PRINCIPAL TREND */}
         <PrincipalSection

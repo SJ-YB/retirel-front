@@ -1,5 +1,6 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import DashboardPage from './DashboardPage'
@@ -29,6 +30,15 @@ vi.mock('../components/charts/DividendBars', () => ({ default: () => null }))
 vi.mock('../components/charts/PrincipalChart', () => ({ default: () => null }))
 
 const mockedGet = vi.mocked(apiClient.get)
+
+// 채권 비중 카드의 '자산군 지정하기' 링크가 라우터 컨텍스트를 필요로 한다.
+function renderPage() {
+  return render(
+    <MemoryRouter>
+      <DashboardPage />
+    </MemoryRouter>,
+  )
+}
 const mockedPost = vi.mocked(apiClient.post)
 
 function point(
@@ -55,7 +65,7 @@ function respond(trend: NetWorthPointResponse[], running = false) {
     if (url === '/v1/net-worth/refresh') {
       return Promise.resolve({ data: { running, started: false } })
     }
-    // 대시보드의 나머지 목 데이터(summary/allocation)와 배당·원금 추이는 그대로 둔다.
+    // 대시보드의 나머지 목 데이터(summary)와 비중·배당·원금 추이는 그대로 둔다.
     return Promise.reject(new Error('unhandled'))
   })
 }
@@ -73,7 +83,7 @@ describe('DashboardPage', () => {
       point({ date: '2026-09-13', net_worth_krw: '1140000', accounts: 2 }),
     ])
 
-    render(<DashboardPage />)
+    renderPage()
 
     expect(await screen.findByText('1,140,000')).toBeInTheDocument()
     expect(screen.getByText(/기준일 2026 09 13 · 2개 계좌/)).toBeInTheDocument()
@@ -84,7 +94,7 @@ describe('DashboardPage', () => {
   it('통화를 바꾸면 그 날의 환율로 환산된 달러 순자산을 보여준다', async () => {
     respond([point()])
 
-    render(<DashboardPage />)
+    renderPage()
     await screen.findByText('1,140,000')
 
     const [heroToggle] = screen.getAllByRole('button', { name: 'USD' })
@@ -100,7 +110,7 @@ describe('DashboardPage', () => {
       point({ date: '2026-09-13', net_worth_krw: '1200000' }),
     ])
 
-    render(<DashboardPage />)
+    renderPage()
 
     expect(await screen.findByTestId('trend-chart')).toHaveTextContent(
       '3 points KRW',
@@ -112,7 +122,7 @@ describe('DashboardPage', () => {
   it('기본 구간(6M)의 시작일을 붙여 추이를 조회한다', async () => {
     respond([point()])
 
-    render(<DashboardPage />)
+    renderPage()
 
     await waitFor(() =>
       expect(mockedGet).toHaveBeenCalledWith(
@@ -127,7 +137,7 @@ describe('DashboardPage', () => {
   it('전체 구간은 시작일 없이 조회한다', async () => {
     respond([point()])
 
-    render(<DashboardPage />)
+    renderPage()
     await screen.findByText('1,140,000')
 
     await userEvent.click(screen.getByRole('button', { name: '전체' }))
@@ -142,7 +152,7 @@ describe('DashboardPage', () => {
   it('평가된 순자산이 없으면 안내 문구를 보여준다', async () => {
     respond([])
 
-    render(<DashboardPage />)
+    renderPage()
 
     expect(
       await screen.findByText(/아직 평가된 순자산이 없습니다/),
@@ -154,7 +164,7 @@ describe('DashboardPage', () => {
     respond([point()])
     mockedPost.mockResolvedValue({ data: { running: true, started: true } })
 
-    render(<DashboardPage />)
+    renderPage()
     await screen.findByText('1,140,000')
     const trendCallsBefore = mockedGet.mock.calls.filter(
       ([url]) => url === '/v1/net-worth/trend',
