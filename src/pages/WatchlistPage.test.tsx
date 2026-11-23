@@ -18,6 +18,11 @@ vi.mock('../stores', () => ({
   useUiStore: () => ({ showToast }),
 }))
 
+const { isMobile } = vi.hoisted(() => ({ isMobile: { value: false } }))
+vi.mock('../hooks/useIsMobile', () => ({
+  useIsMobile: () => isMobile.value,
+}))
+
 const mockedGet = vi.mocked(apiClient.get)
 const mockedPost = vi.mocked(apiClient.post)
 const mockedDelete = vi.mocked(apiClient.delete)
@@ -49,6 +54,7 @@ function httpError(status: number): AxiosError {
 }
 
 afterEach(() => {
+  isMobile.value = false
   vi.restoreAllMocks()
   vi.clearAllMocks()
 })
@@ -224,6 +230,18 @@ describe('WatchlistPage', () => {
     expect(showToast).toHaveBeenCalledWith({
       message: 'TLT을(를) 채권(으)로 지정했습니다',
       type: 'success',
+    })
+  })
+
+  it('모바일에서는 종목 정보와 조작을 두 줄로 나눈다', async () => {
+    isMobile.value = true
+    mockedGet.mockResolvedValue({ data: [stock()] })
+
+    render(<WatchlistPage />)
+    await screen.findByText('NVDA')
+
+    expect(screen.getByTestId('watched-stock-row')).toHaveStyle({
+      flexDirection: 'column',
     })
   })
 })

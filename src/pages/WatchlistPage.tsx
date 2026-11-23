@@ -62,23 +62,27 @@ function WatchedStockRow({
   stock,
   removing,
   updating,
+  isMobile,
   onRemove,
   onChangeAssetClass,
 }: {
   stock: WatchedStockResponse
   removing: boolean
   updating: boolean
+  isMobile: boolean
   onRemove: () => void
   onChangeAssetClass: (assetClass: AssetClass) => void
 }) {
-  return (
+  // 모바일은 폭이 좁아 한 줄에 다 넣으면 종목명이 짓눌린다. 종목 정보와
+  // 조작(자산군·등록일·해제)을 두 줄로 나눈다.
+  const info = (
     <div
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 14,
-        padding: '14px 4px',
-        borderTop: '1px solid var(--border)',
+        gap: isMobile ? 10 : 14,
+        minWidth: 0,
+        flex: 1,
       }}
     >
       <div
@@ -114,7 +118,18 @@ function WatchedStockRow({
           </div>
         )}
       </div>
+    </div>
+  )
 
+  const controls = (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: isMobile ? 10 : 14,
+        flexShrink: 0,
+      }}
+    >
       <Select<AssetClass>
         size="small"
         value={stock.asset_class ?? 'stock'}
@@ -126,7 +141,15 @@ function WatchedStockRow({
         aria-label={`${stock.ticker} 자산군`}
       />
 
-      <div className="mono" style={{ fontSize: 11, color: 'var(--text-3)' }}>
+      <div
+        className="mono"
+        style={{
+          fontSize: 11,
+          color: 'var(--text-3)',
+          whiteSpace: 'nowrap',
+          marginLeft: isMobile ? 'auto' : undefined,
+        }}
+      >
         {formatCreatedAt(stock.created_at)}
       </div>
 
@@ -145,6 +168,23 @@ function WatchedStockRow({
           해제
         </Button>
       </Popconfirm>
+    </div>
+  )
+
+  return (
+    <div
+      data-testid="watched-stock-row"
+      style={{
+        display: 'flex',
+        flexDirection: isMobile ? 'column' : 'row',
+        alignItems: isMobile ? 'stretch' : 'center',
+        gap: isMobile ? 10 : 14,
+        padding: '14px 4px',
+        borderTop: '1px solid var(--border)',
+      }}
+    >
+      {info}
+      {controls}
     </div>
   )
 }
@@ -347,6 +387,7 @@ function WatchlistPage() {
                 stock={stock}
                 removing={removingKey === watchedKey(stock)}
                 updating={updatingKey === watchedKey(stock)}
+                isMobile={isMobile}
                 onRemove={() => handleRemove(stock)}
                 onChangeAssetClass={(assetClass) =>
                   handleChangeAssetClass(stock, assetClass)
